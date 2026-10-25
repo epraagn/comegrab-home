@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stack Tower</title>
+<style>
+:root{--bg:#dff1ff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0b1220}}
+:root[data-theme="dark"]{--bg:#0b1220}
+html,body{height:100%;margin:0;background:var(--bg);overflow:hidden;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+body{display:flex}
+#wrap{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+canvas{display:block;border-radius:14px}
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="c" aria-label="Stack Tower game. Tap, click or press Space to drop the block."></canvas></div>
+<script>
+(function(){
+const W=360,H=640,BH=28,START_W=200,PERFECT=5,GROW=8;
+const FONT='ui-rounded,"SF Pro Rounded","Trebuchet MS",system-ui,sans-serif';
+const cv=document.getElementById('c'),ctx=cv.getContext('2d'),wrap=document.getElementById('wrap');
+const baseY=H-110;
+let blocks,mv,pieces,fx,pop,combo,cam,state='ready',overAt=0,best=0,skyN=0,newBest=false,last=performance.now();
+try{best=parseInt(localStorage.getItem('stacktower-best'),10)||0}catch(e){}
+const stars=[];for(let i=0;i<50;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+.4});
+
+function resize(){
+  const r=wrap.getBoundingClientRect(),s=Math.min(r.width/W,r.height/H),d=window.devicePixelRatio||1;
+  cv.style.width=W*s+'px';cv.style.height=H*s+'px';
+  cv.width=Math.round(W*s*d);cv.height=Math.round(H*s*d);
+  ctx.setTransform(s*d,0,0,s*d,0,0);
+}
+window.addEventListener('resize',resize);
+
+let ac;
+function beep(f,d,type,v){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain();o.type=type||'sine';o.frequency.value=f;g.gain.setValueAtTime(v||.12,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+d)}catch(e){}}
+
+function spawn(){
+  const n=blocks.length,top=blocks[n-1];
+  mv={w:top.w,x:0,dir:1,sp:Math.min(2.4+n*.07,7.5)};
+  if(Math.random()<.5){mv.x=W-mv.w;mv.dir=-1}
+}
+function reset(){
+  blocks=[{x:(W-START_W)/2,w:START_W}];pieces=[];fx=[];pop=null;combo=0;cam=0;newBest=false;spawn();
+}
+function finish(){
+  const sc=blocks.length-1;
+  if(sc>best){best=sc;newBest=sc>0;try{localStorage.setItem('stacktower-best',String(best))}catch(e){}}
+  state='over';overAt=performance.now();beep(110,.5,'sawtooth',.15);
+}
+function drop(){
+  if(state==='ready'){state='play';ac&&ac.resume&&ac.resume();beep(300,.08);return}
+  if(state==='over'){if(performance.now()-overAt>500){reset();state='play'}return}
+  const n=blocks.length,top=blocks[n-1],y=baseY-n*BH;
+  const l=Math.max(top.x,mv.x),r=Math.min(top.x+top.w,mv.x+mv.w),ov=r-l;
+  if(ov<=0){pieces.push({x:mv.x,y,w:mv.w,i:n,vy:0,vx:mv.dir*1.5});mv=null;finish();return}
+  let nb;
+  if(Math.abs(mv.x-top.x)<=PERFECT){
+    combo++;
+    const w=Math.min(top.w+(combo>=3?GROW:0),START_W);
+    nb={x:Math.max(0,Math.min(W-w,top.x-(w-top.w)/2)),w};
+    fx.push({x:nb.x,w:nb.w,y,t:0});
+    pop={t:0,text:combo>1?'Perfect ×'+combo:'Perfect'};
+    beep(420+Math.min(combo,12)*55,.18,'triangle');
+  }else{
+    combo=0;nb={x:l,w:ov};
+    if(mv.x<top.x)pieces.push({x:mv.x,y,w:top.x-mv.x,i:n,vy:0,vx:-1});
+    else pieces.push({x:top.x+top.w,y,w:mv.x+mv.w-(top.x+top.w),i:n,vy:0,vx:1});
+    beep(200,.1);
+  }
+  blocks.push(nb);spawn();
+}
+
+function hue(i){return(190+i*14)%360}
+function block(x,y,w,i,a){
+  const h=hue(i);ctx.globalAlpha=a==null?1:a;
+  ctx.fillStyle='hsl('+h+',65%,52%)';ctx.fillRect(x,y,w,BH);
+  ctx.fillStyle='hsl('+h+',75%,70%)';ctx.fillRect(x,y,w,7);
+  ctx.fillStyle='hsl('+h+',60%,40%)';ctx.fillRect(x,y+BH-4,w,4);
+  ctx.globalAlpha=1;
+}
+function text(s,x,y,size,a,align){
+  ctx.globalAlpha=a==null?1:a;ctx.font='800 '+size+'px '+FONT;ctx.textAlign=align||'center';
+  ctx.shadowColor='rgba(0,0,0,.4)';ctx.shadowBlur=8;ctx.fillStyle='#fff';ctx.fillText(s,x,y);
+  ctx.shadowBlur=0;ctx.globalAlpha=1;
+}
+
+function update(f,dt){
+  if(mv&&(state==='ready'||state==='play')){
+    mv.x+=mv.dir*mv.sp*f;
+    if(mv.x<=0){mv.x=0;mv.dir=1}
+    if(mv.x>=W-mv.w){mv.x=W-mv.w;mv.dir=-1}
+  }
+  const target=Math.max(0,(blocks.length-5)*BH);
+  cam+=(target-cam)*Math.min(1,.1*f);
+  skyN+=((blocks.length-1)-skyN)*Math.min(1,.03*f);
+  for(const p of pieces){p.vy+=.55*f;p.y+=p.vy*f;p.x+=p.vx*f}
+  pieces=pieces.filter(p=>p.y+cam<H+80);
+  for(const e of fx)e.t+=dt*2.4;
+  fx=fx.filter(e=>e.t<1);
+  if(pop){pop.t+=dt*1.6;if(pop.t>1)pop=null}
+}
+
+function draw(){
+  const n=blocks.length,sc=n-1;
+  const hh=(205+skyN*3)%360,lt=Math.max(10,72-skyN*1.4);
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'hsl('+hh+',55%,'+lt+'%)');
+  g.addColorStop(1,'hsl('+((hh+35)%360)+',70%,'+Math.min(92,lt+22)+'%)');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  const sa=Math.max(0,Math.min(1,(skyN-15)/20));
+  if(sa>0){ctx.fillStyle='#fff';for(const s of stars){ctx.globalAlpha=sa*(.4+.6*((s.x*7+s.y*3)%10)/10);ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,6.3);ctx.fill()}ctx.globalAlpha=1}
+  const gy=baseY+BH+cam;
+  if(gy<H){ctx.fillStyle='#2b3350';ctx.fillRect(0,gy,W,H-gy)}
+  for(let i=0;i<n;i++){const y=baseY-i*BH+cam;if(y>-BH&&y<H)block(blocks[i].x,y,blocks[i].w,i)}
+  if(mv)block(mv.x,baseY-n*BH+cam,mv.w,n);
+  for(const p of pieces)block(p.x,p.y+cam,p.w,p.i,.9);
+  for(const e of fx){
+    ctx.globalAlpha=1-e.t;ctx.strokeStyle='#fff';ctx.lineWidth=3;
+    const gr=e.t*14;ctx.strokeRect(e.x-gr,e.y+cam-gr,e.w+gr*2,BH+gr*2);ctx.globalAlpha=1;
+  }
+  if(state!=='ready')text(String(sc),W/2,96,72);
+  if(pop)text(pop.text,W/2,150-pop.t*24,26,1-pop.t);
+  if(state==='ready'){
+    ctx.fillStyle='rgba(10,15,30,.35)';ctx.fillRect(0,0,W,H);
+    text('Stack Tower',W/2,190,50);
+    text('Tap, click or press Space',W/2,240,19,.95);
+    text('Drop each block to line it up with the one below',W/2,268,14,.85);
+    if(best)text('Best '+best,W/2,310,22);
+  }
+  if(state==='over'){
+    ctx.fillStyle='rgba(10,15,30,.5)';ctx.fillRect(0,0,W,H);
+    text(newBest?'New best!':'Game over',W/2,230,44);
+    text('Height '+sc,W/2,285,28);
+    text('Best '+best,W/2,322,22,.9);
+    if(performance.now()-overAt>500)text('Tap to play again',W/2,390,22);
+  }
+}
+
+function loop(t){
+  const dt=Math.min(.05,(t-last)/1000);last=t;
+  update(dt*60,dt);draw();requestAnimationFrame(loop);
+}
+wrap.addEventListener('pointerdown',function(e){e.preventDefault();drop()});
+window.addEventListener('keydown',function(e){
+  if(e.repeat)return;
+  if(e.code==='Space'||e.code==='Enter'||e.code==='ArrowDown'){e.preventDefault();drop()}
+});
+reset();resize();requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
