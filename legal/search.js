@@ -28,6 +28,7 @@
 
   // everyday phrases -> terms the laws actually use
   var SYNONYMS = [
+    [/security deposit|\blandlord\b|\btenant\b|\brent(ed)?\b|\btenancy\b|\bdeposit\b/i, 'breach of contract compensation for loss or damage criminal breach of trust money recovery agreement'],
     [/cheque\s*(bounce|bounced|return|dishonou?r)|bounced cheque|bounce of cheque/i, 'dishonour of cheque insufficiency of funds notice drawer negotiable instruments'],
     [/\b(fir|f\.i\.r|first information report)\b|police complaint|file a complaint with police|register a case/i, 'information in cognizable cases first information report police station'],
     [/zero fir/i, 'information cognizable cases any police station'],

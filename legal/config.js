@@ -5,7 +5,7 @@
    whatsapp / email: where the "Talk to a person" buttons send the visitor. */
 window.LEGAL_CONFIG = {
   api: 'https://comegrab-legal.prateek-agnihotri-engineer.workers.dev/',
-  freeLimit: 5,
+  freeLimit: 20,
   whatsapp: '919582237599',
   email: 'epraagn@gmail.com'
 };

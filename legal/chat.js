@@ -19,7 +19,7 @@
       l = l.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
       var m = l.match(/^\s*(?:[-•*]|\d+[.)])\s+(.*)$/);
       if (m) { if (!inList) { html += '<ul>'; inList = true; } html += '<li>' + m[1] + '</li>'; }
-      else { if (inList) { html += '</ul>'; inList = false; } if (l.trim()) html += '<p>' + l + '</p>'; }
+      else { if (inList) { html += '</ul>'; inList = false; } if (l.trim()) html += (/^\s*(<strong>)?Recommendation:/i.test(l) ? '<p class="rec">' : '<p>') + l + '</p>'; }
     });
     if (inList) html += '</ul>';
     return html;
@@ -95,9 +95,30 @@
     if (!passages.length) return null;
     var d = document.createElement('p');
     d.className = 'sources';
-    d.textContent = 'Looked at: ' + passages.slice(0, 4).map(function (p) { return p.label.replace(/\s*\(replaces[^)]*\)/, ''); }).join(' | ');
+    d.textContent = (DEBUG ? 'Search words: ' + (lastKeywords || '(none)') + '. ' : '') + 'Looked at: ' + passages.slice(0, 4).map(function (p) { return p.label.replace(/\s*\(replaces[^)]*\)/, ''); }).join(' | ');
     return d;
   }
+
+  // one search per legal angle, then merge: best result of each angle first, no duplicates, at most 8 sections
+  function multiSearch(question, queries) {
+    if (!queries.length) return S.search(question, 6);
+    var lists = [S.search(question, 3)];
+    queries.forEach(function (q) { lists.push(S.search(question + ' ' + q, 4)); });
+    var seen = {}, out = [];
+    for (var i = 0; i < 4 && out.length < 8; i++) {
+      for (var j = 0; j < lists.length && out.length < 8; j++) {
+        var r = lists[j][i];
+        if (!r) continue;
+        var key = r.short + '|' + r.label;
+        if (seen[key]) continue;
+        seen[key] = 1; out.push(r);
+      }
+    }
+    return out;
+  }
+
+  var lastKeywords = '';
+  var DEBUG = typeof location !== 'undefined' && /[?&]debug/.test(location.search);
 
   function ask(question) {
     question = question.replace(/\s+/g, ' ').trim();
@@ -113,10 +134,11 @@
     var typing = addMsg('bot', '<span class="dots" aria-label="Typing"><i></i><i></i><i></i></span>');
 
     S.load('data/').then(function () {
-      if (!C.api) return '';
-      // Step 1: ask the AI to turn the everyday question into legal search keywords (falls back silently)
+      if (!C.api) return { queries: [] };
+      setBusy(true, 'Thinking through the legal angles...');
+      // Step 1: ask the AI to list the legal angles and search words (falls back silently)
       var ctl0 = new AbortController();
-      var t0 = setTimeout(function () { ctl0.abort(); }, 8000);
+      var t0 = setTimeout(function () { ctl0.abort(); }, 18000);
       return fetch(C.api, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ctl0.signal,
         body: JSON.stringify({ mode: 'rewrite', question: question, history: history })
@@ -124,15 +146,17 @@
         clearTimeout(t0);
         return r.status === 200 ? r.json() : {};
       }).then(function (d) {
-        return d && typeof d.query === 'string' ? d.query.slice(0, 300) : '';
-      }).catch(function () { clearTimeout(t0); return ''; });
-    }).then(function (keywords) {
-      var results = S.search(keywords ? question + ' ' + keywords : question, 6);
+        var qs = d && Array.isArray(d.queries) ? d.queries : (d && typeof d.query === 'string' && d.query ? [d.query] : []);
+        return { queries: qs.filter(function (x) { return typeof x === 'string' && x; }).slice(0, 5).map(function (x) { return x.slice(0, 260); }) };
+      }).catch(function () { clearTimeout(t0); return { queries: [] }; });
+    }).then(function (kw) {
+      lastKeywords = kw.queries.join(' | ');
+      var results = multiSearch(question, kw.queries);
       var passages = S.passagesFor(results);
       if (!C.api) { return finish(typing, searchOnly(results), passages, true); }
-      setBusy(true, 'Writing an answer...');
+      setBusy(true, 'Writing your answer (checking trusted websites if needed)...');
       var ctl = new AbortController();
-      var timer = setTimeout(function () { ctl.abort(); }, 40000);
+      var timer = setTimeout(function () { ctl.abort(); }, 65000);
       return fetch(C.api, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ctl.signal,
         body: JSON.stringify({ question: question, history: history, passages: passages })
@@ -145,7 +169,7 @@
           var ans = res.data.answer, human = /\[\[HUMAN\]\]/.test(ans);
           ans = ans.replace(/\[\[HUMAN\]\]/g, '').trim();
           thread.push({ role: 'assistant', content: ans });
-          return finish(typing, { html: renderText(ans), human: human, record: false }, passages, false);
+          return finish(typing, { html: renderText(ans), human: human, record: false, sources: res.data.sources }, passages, false);
         }
         if (res.status === 429) {
           updateLeft(0);
@@ -174,11 +198,37 @@
     return { html: sectionCards(results, 'These are the sections that look most relevant. This is the text of the law itself, not advice for your situation.'), human: results[0].score < 4, record: true };
   }
 
+  function webSources(list) {
+    if (!Array.isArray(list) || !list.length) return null;
+    var d = document.createElement('div');
+    d.className = 'websrc';
+    var h = document.createElement('p');
+    h.className = 'websrc-h';
+    h.textContent = 'Sources from the web';
+    d.appendChild(h);
+    var ul = document.createElement('ul');
+    var n = 0;
+    list.slice(0, 5).forEach(function (x) {
+      if (!x || typeof x.url !== 'string' || !/^https?:\/\//i.test(x.url)) return;
+      var li = document.createElement('li');
+      var a = document.createElement('a');
+      a.href = x.url; a.target = '_blank'; a.rel = 'noopener noreferrer nofollow';
+      a.textContent = String(x.title || x.url).slice(0, 140);
+      li.appendChild(a);
+      ul.appendChild(li); n++;
+    });
+    if (!n) return null;
+    d.appendChild(ul);
+    return d;
+  }
+
   function finish(typing, out, passages, plainRecord) {
     typing.remove();
     var row = addMsg('bot', out.html);
     if (out.record) thread.push({ role: 'assistant', content: row.textContent.slice(0, 600) });
     var src = out.record ? null : sourcesLine(passages);
+    var ws = out.sources ? webSources(out.sources) : null;
+    if (ws) row.querySelector('.bubble').appendChild(ws);
     if (src) row.querySelector('.bubble').appendChild(src);
     if (out.human) row.querySelector('.bubble').appendChild(handoffBlock());
     scrollDown();
