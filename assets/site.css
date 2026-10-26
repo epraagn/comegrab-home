@@ -168,3 +168,54 @@ footer .note{margin-top:18px;font-size:.88rem;opacity:.75;max-width:48em}
 
 @media(max-width:860px){.nav a.link{display:none}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+
+/* legal chat */
+.emerg{border-left:4px solid #B3261E;background:#FDF1F0;padding:14px 18px;color:#5C1410;margin-bottom:22px}
+.chat-wrap{display:grid;gap:26px}
+@media(min-width:980px){.chat-wrap{grid-template-columns:1.5fr .5fr;gap:40px;align-items:start}}
+.chat{border:1px solid var(--line);background:var(--white);display:flex;flex-direction:column;box-shadow:0 18px 40px -22px rgba(11,37,69,.35)}
+.chat-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:16px 22px;background:var(--navy);color:#fff;border-bottom:3px solid var(--gold);font-size:.9rem;letter-spacing:.04em;text-transform:uppercase;font-weight:600}
+.chat-top #left{font-size:.82rem;text-transform:none;letter-spacing:0;font-weight:500;color:#C9D3E6}
+.msgs{padding:24px 22px;overflow-y:auto;height:min(58vh,520px);display:flex;flex-direction:column;gap:22px;background:#FBFCFE}
+.msg{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.msg .who{font-size:.72rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.msg.user{align-items:flex-end}
+.bubble{max-width:92%;padding:2px 0 2px 16px;line-height:1.65;overflow-wrap:anywhere;border-left:3px solid var(--gold);color:var(--ink)}
+
+.msg.user .bubble{background:var(--navy);color:#fff;border-left:0;padding:11px 16px;max-width:80%}
+.bubble p{margin:0}
+.bubble p+p{margin-top:.7em}
+.bubble ul{margin:.6em 0 0;padding-left:1.2em}
+.bubble li{margin-top:.3em}
+.bubble .sources{margin-top:.9em;font-size:.85rem;color:var(--muted)}
+.sec{margin-top:10px;border:1px solid var(--line);background:var(--white);max-width:640px}
+.sec summary{cursor:pointer;padding:10px 12px;font-weight:600;color:var(--navy)}
+.sec pre{margin:0;padding:12px;white-space:pre-wrap;font-family:var(--body);font-size:.92rem;border-top:1px solid var(--line);max-height:260px;overflow:auto}
+.handoff{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.handoff .cta-row{margin-top:10px}
+.fine{font-size:.85rem;color:var(--muted);margin-top:8px}
+.starters{padding:0 22px 18px;display:grid;gap:0}
+.starters[hidden]{display:none}
+.starters-h{font-size:.72rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.starters button{font:inherit;font-size:.95rem;text-align:left;padding:11px 28px 11px 0;border:0;border-top:1px solid var(--line);background:transparent;color:var(--navy);cursor:pointer;position:relative}
+.starters button::after{content:"\2192";position:absolute;right:4px;color:var(--gold);transition:transform .15s}
+.starters button:hover{color:var(--navy-2);font-weight:600}
+.starters button:hover::after{transform:translateX(4px)}
+.composer{display:flex;gap:0;margin:0 22px 18px;border:1.5px solid var(--navy);align-items:stretch;background:#fff}
+.composer:focus-within{box-shadow:0 0 0 3px rgba(201,162,74,.45)}
+.composer textarea{flex:1;resize:none;font:inherit;font-size:1rem;padding:14px 16px;border:0;outline:0;min-height:52px;max-height:150px;color:var(--ink);background:transparent}
+.composer .btn{border-radius:0;padding:0 26px;background:var(--navy);border-color:var(--navy);color:#fff}
+.composer .btn:hover{background:var(--navy-2);border-color:var(--navy-2)}
+.composer .btn[disabled]{opacity:.6;cursor:wait}
+.chat-foot{display:flex;flex-wrap:wrap;gap:10px 18px;padding:14px 22px;border-top:1px solid var(--line);font-size:.88rem;color:var(--muted);justify-content:space-between;background:var(--soft)}
+.chat-foot a{color:var(--navy);font-weight:600;text-underline-offset:4px}
+.side .box{border:1px solid var(--line);padding:20px;background:var(--white)}
+.side .box+.box{margin-top:18px}
+.side h2{font-size:1.15rem;margin-bottom:8px;color:var(--navy)}
+.side ul{padding-left:1.1em}
+.side li{margin-top:.35em;font-size:.95rem;color:var(--muted)}
+.dots i{display:inline-block;width:8px;height:8px;margin-right:4px;border-radius:50%;background:var(--muted);animation:blink 1.2s infinite}
+.dots i:nth-child(2){animation-delay:.2s}
+.dots i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.dots i{animation:none}}

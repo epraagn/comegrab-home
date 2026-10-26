@@ -30,6 +30,10 @@
   function addMsg(role, html, plain) {
     var row = document.createElement('div');
     row.className = 'msg ' + role;
+    var who = document.createElement('div');
+    who.className = 'who';
+    who.textContent = role === 'user' ? 'You' : 'ComeGrab Legal';
+    row.appendChild(who);
     var b = document.createElement('div');
     b.className = 'bubble';
     if (plain) b.textContent = plain; else b.innerHTML = html;
@@ -109,7 +113,21 @@
     var typing = addMsg('bot', '<span class="dots" aria-label="Typing"><i></i><i></i><i></i></span>');
 
     S.load('data/').then(function () {
-      var results = S.search(question, 6);
+      if (!C.api) return '';
+      // Step 1: ask the AI to turn the everyday question into legal search keywords (falls back silently)
+      var ctl0 = new AbortController();
+      var t0 = setTimeout(function () { ctl0.abort(); }, 8000);
+      return fetch(C.api, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ctl0.signal,
+        body: JSON.stringify({ mode: 'rewrite', question: question, history: history })
+      }).then(function (r) {
+        clearTimeout(t0);
+        return r.status === 200 ? r.json() : {};
+      }).then(function (d) {
+        return d && typeof d.query === 'string' ? d.query.slice(0, 300) : '';
+      }).catch(function () { clearTimeout(t0); return ''; });
+    }).then(function (keywords) {
+      var results = S.search(keywords ? question + ' ' + keywords : question, 6);
       var passages = S.passagesFor(results);
       if (!C.api) { return finish(typing, searchOnly(results), passages, true); }
       setBusy(true, 'Writing an answer...');
