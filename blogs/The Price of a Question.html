@@ -1,0 +1,590 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>The Price of a Question</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+/* Layout concept: the owner's site layout. Sticky white bar, navy page head with the receipt as a gold-topped
+   panel, a 43rem white reading column, a soft closing block, and a navy footer. Single light look by design. */
+:root {
+  --navy: #0B2545;
+  --navy-2: #13315C;
+  --ink: #14213D;
+  --muted: #52607A;
+  --line: #D9DEE7;
+  --soft: #F3F5F9;
+  --white: #FFFFFF;
+  --gold: #C9A24A;
+  --display: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, "Courier New", monospace;
+  --wrap: 1180px;
+  --gutter: clamp(20px, 5vw, 48px);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--white); color: var(--ink); font-family: var(--body);
+  font-size: 1.0625rem; line-height: 1.65; -webkit-text-size-adjust: 100%;
+  padding-block: 0;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); background: var(--white); z-index: 20; }
+a { color: inherit; }
+p, ul, ol { margin: 0; }
+h1, h2, h3 { font-family: var(--display); font-weight: 600; margin: 0; line-height: 1.15; letter-spacing: -.01em; text-wrap: balance; }
+.wrap {
+  max-width: var(--wrap); margin: 0 auto;
+  padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+}
+:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; border-radius: 2px; }
+section, article { scroll-margin-top: 96px; }
+code { font-family: var(--mono); font-size: .86em; background: var(--soft); border: 1px solid var(--line); padding: .05em .35em; }
+
+/* header */
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: var(--white); border-bottom: 1px solid var(--line); }
+.bar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 20px; height: 72px; }
+.brand { font-family: var(--display); font-weight: 600; font-size: 1.35rem; text-decoration: none; color: var(--navy); }
+.nav { display: flex; align-items: center; gap: 26px; }
+.nav a.link { font-size: .98rem; font-weight: 500; text-decoration: none; color: var(--ink); }
+.nav a.link:hover { color: var(--navy); text-decoration: underline; text-underline-offset: 6px; text-decoration-color: var(--gold); text-decoration-thickness: 2px; }
+
+/* buttons */
+.btn {
+  display: inline-block; font-family: var(--body); font-weight: 600; font-size: .98rem; line-height: 1; text-decoration: none;
+  padding: 15px 24px; border-radius: 3px; border: 2px solid var(--gold); background: var(--gold); color: var(--navy);
+  transition: background-color .15s, color .15s, border-color .15s; cursor: pointer;
+}
+.btn:hover { background: var(--navy); border-color: var(--navy); color: var(--white); }
+.btn.outline { background: transparent; border-color: var(--navy); color: var(--navy); }
+.btn.outline:hover { background: var(--navy); color: var(--white); }
+.btn.small { padding: 11px 18px; }
+
+/* page head */
+.dark { background: var(--navy); color: var(--white); }
+.hero { display: grid; gap: 44px; padding-block: clamp(48px, 8vw, 96px); align-items: center; }
+@media (min-width: 960px) { .hero { grid-template-columns: 1.15fr .85fr; gap: 72px; } }
+.hero > * { min-width: 0; }
+.crumb { font-size: .95rem; margin-bottom: 18px; color: rgba(255,255,255,.75); }
+.hero h1 { font-size: clamp(2.2rem, 5.4vw, 3.9rem); line-height: 1.08; }
+.hero h1 span { display: block; }
+.lede { margin-top: 22px; font-size: 1.2rem; color: rgba(255,255,255,.82); max-width: 34em; }
+.hero .meta { margin-top: 20px; font-size: .92rem; color: rgba(255,255,255,.65); }
+
+.panel { background: var(--navy-2); border-top: 4px solid var(--gold); padding: clamp(22px, 3vw, 32px); color: var(--white); }
+.panel h2 { font-family: var(--body); font-size: .8rem; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: rgba(255,255,255,.75); margin-bottom: 14px; }
+.rline { display: flex; align-items: baseline; gap: .5rem; min-width: 0; font-family: var(--mono); font-size: .9rem; line-height: 1.9; font-variant-numeric: tabular-nums; }
+.rline .dots { flex: 1; border-bottom: 1px dotted rgba(255,255,255,.45); transform: translateY(-.3em); min-width: 1rem; }
+.rline .amt { margin-left: .8rem; }
+.rline.total { margin-top: .6rem; padding-top: .7rem; border-top: 1px solid rgba(255,255,255,.2); font-weight: 500; font-size: 1.05rem; }
+.rline.total span:last-child { color: var(--gold); }
+.panel .note-line { margin-top: 16px; font-size: .9rem; color: rgba(255,255,255,.75); line-height: 1.5; }
+
+/* article */
+.block { padding-block: clamp(48px, 7vw, 88px); }
+.soft { background: var(--soft); }
+.prose { max-width: 43rem; }
+.prose h2 { font-size: clamp(1.55rem, 3.6vw, 1.85rem); margin-top: .35em; color: var(--navy); }
+.prose p { margin-top: 1.1em; }
+.prose .label { margin-top: 0; font-size: .78rem; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+.prose .label::before { content: ""; display: inline-block; width: 22px; height: 3px; background: var(--gold); vertical-align: middle; margin-right: 10px; }
+.prose .sub { color: var(--muted); font-size: 1.1rem; }
+.prose section.item { margin-top: clamp(3rem, 6vw, 4.4rem); }
+.prose section.item:first-of-type { margin-top: 0; }
+
+.plain { list-style: none; padding: 0; border-top: 1px solid var(--line); margin-top: 1.2em; }
+.plain li { border-bottom: 1px solid var(--line); }
+.plain a { display: flex; gap: 14px; padding: 13px 0; text-decoration: none; color: var(--ink); }
+.plain a:hover b { text-decoration: underline; text-underline-offset: 5px; text-decoration-color: var(--gold); text-decoration-thickness: 2px; }
+.plain b { color: var(--navy); font-weight: 600; }
+.plain .n { font-family: var(--display); font-weight: 600; color: var(--navy); min-width: 1.4rem; }
+
+.tablewrap { border: 1px solid var(--line); background: var(--white); overflow-x: auto; margin-top: 1.5em; }
+table { border-collapse: collapse; width: 100%; font-size: .98rem; line-height: 1.55; }
+th, td { text-align: left; vertical-align: top; padding: .8rem 1rem; border-bottom: 1px solid var(--line); }
+tr:last-child > th, tr:last-child > td { border-bottom: 0; }
+table.kv th { width: 9.5rem; background: var(--soft); color: var(--navy); font-weight: 600; border-right: 1px solid var(--line); }
+table.grid { min-width: 520px; }
+table.grid thead th { background: var(--soft); color: var(--navy); font-size: .8rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+table.grid .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.note { margin-top: 1.6em; padding: 16px 20px; background: var(--soft); border-left: 4px solid var(--gold); }
+.note b { display: block; font-size: .76rem; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+.note span { font-family: var(--display); font-weight: 600; font-size: 1.12rem; color: var(--navy); line-height: 1.35; display: block; text-wrap: balance; }
+
+/* flow */
+.flowlabel { margin-top: 1.4em; font-size: .78rem; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+.flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 6px; list-style: none; padding: 0; margin-top: .7em; }
+.flow li { font-size: .9rem; font-weight: 500; padding: 6px 12px; background: var(--soft); border: 1px solid var(--line); color: var(--navy); }
+.flow li.stop { border-color: var(--gold); background: #FBF5E6; }
+.flow li + li::before { content: "\2192"; color: var(--muted); margin-right: 8px; font-weight: 400; }
+
+/* calculators */
+.calc { border: 1px solid var(--line); border-top: 4px solid var(--navy); padding: clamp(20px, 3vw, 28px); margin-top: 1.6em; background: var(--white); }
+.calc h3 { font-size: 1.3rem; color: var(--navy); }
+.calc .hint { margin-top: 6px; font-size: .96rem; color: var(--muted); }
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: 14px; margin-top: 18px; }
+.fields label { display: grid; gap: 6px; font-size: .78rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); min-width: 0; }
+.fields input {
+  font: inherit; font-size: 1.05rem; letter-spacing: 0; text-transform: none; font-weight: 500;
+  background: var(--white); color: var(--ink); border: 1.5px solid var(--navy); border-radius: 0; padding: 10px 12px; width: 100%; min-width: 0;
+}
+.fields input:focus-visible { outline: 3px solid var(--gold); outline-offset: 1px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 0; margin-top: 22px; border-top: 1px solid var(--line); }
+.stat { padding: 16px 0; border-bottom: 1px solid var(--line); }
+@media (max-width: 520px) { .stats { grid-template-columns: 1fr; } }
+@media (min-width: 640px) { .stat { padding: 18px 20px; border-bottom: 0; border-left: 1px solid var(--line); } .stat:first-child { border-left: 0; padding-left: 0; } }
+.stat b { display: block; font-family: var(--display); font-weight: 600; font-size: 1.7rem; line-height: 1.1; color: var(--navy); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.stat span { display: block; margin-top: 6px; color: var(--muted); font-size: .92rem; }
+.bars { margin-top: 18px; display: grid; gap: 8px; font-size: .88rem; color: var(--muted); }
+.bar-row { display: grid; grid-template-columns: 6rem minmax(0, 1fr) 3rem; gap: 12px; align-items: center; }
+.bar-row i { display: block; height: 12px; background: var(--soft); border: 1px solid var(--line); }
+.bar-row i b { display: block; height: 100%; width: 0; background: var(--navy); }
+.bar-row.cost i b { background: var(--gold); }
+.bar-row em { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* code */
+.codeblock { position: relative; margin-top: 1.6em; }
+.codeblock h3 { font-family: var(--body); font-size: 1rem; font-weight: 600; color: var(--navy); letter-spacing: 0; margin-bottom: 8px; }
+pre { margin: 0; background: var(--soft); border: 1px solid var(--line); padding: 14px 92px 14px 16px; font-family: var(--mono); font-size: .86rem; line-height: 1.65; overflow-x: auto; color: var(--ink); }
+.copy { position: absolute; right: 10px; bottom: 10px; padding: 8px 14px; font-size: .82rem; background: var(--white); }
+
+/* self-test */
+details { border: 1px solid var(--line); background: var(--white); margin-top: 10px; }
+details summary { cursor: pointer; padding: 12px 14px; font-weight: 600; color: var(--navy); }
+details p { margin: 0; padding: 12px 14px 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: .98rem; }
+.prose .selftest details:first-of-type { margin-top: 1.4em; }
+
+/* up next (steps) */
+.sec-head { max-width: 42rem; margin-bottom: clamp(28px, 4vw, 46px); }
+.sec-head h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); color: var(--navy); }
+.sec-head p { margin-top: 14px; color: var(--muted); }
+.steps { list-style: none; padding: 0; counter-reset: step 8; display: grid; }
+.steps li { counter-increment: step; padding: 20px 0; border-top: 2px solid var(--navy); }
+.steps li::before { content: counter(step); display: block; font-family: var(--display); font-weight: 600; font-size: 1.9rem; color: var(--gold); line-height: 1; margin-bottom: 10px; }
+.steps h3 { font-size: 1.15rem; color: var(--navy); }
+.steps p { margin-top: 6px; color: var(--muted); font-size: .96rem; line-height: 1.5; }
+@media (min-width: 600px) { .steps { grid-template-columns: repeat(2, 1fr); column-gap: 28px; } }
+@media (min-width: 960px) { .steps { grid-template-columns: repeat(4, 1fr); } }
+.fine { margin-top: clamp(28px, 4vw, 44px); font-size: .9rem; color: var(--muted); max-width: 48em; }
+
+/* footer */
+footer { background: var(--navy); color: rgba(255,255,255,.85); padding-block: 34px 42px; font-size: .95rem; }
+footer .row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 28px; }
+footer nav { display: flex; flex-wrap: wrap; gap: 6px 22px; }
+footer a { text-underline-offset: 4px; }
+footer .note-f { margin-top: 18px; font-size: .88rem; opacity: .75; max-width: 48em; }
+
+@media (max-width: 860px) { .nav a.link { display: none; } }
+@media (max-width: 600px) {
+  table.kv, table.kv tbody, table.kv tr, table.kv th, table.kv td { display: block; width: auto; }
+  table.kv tr { border-bottom: 1px solid var(--line); }
+  table.kv tr:last-child { border-bottom: 0; }
+  table.kv th { border-right: 0; border-bottom: 0; padding: .6rem 1rem .1rem; background: var(--soft); }
+  table.kv td { border-bottom: 0; padding: .35rem 1rem .8rem; background: var(--soft); }
+  .bar-row { grid-template-columns: 4.8rem minmax(0, 1fr) 2.8rem; gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+</style>
+
+<header class="bar" id="top">
+  <div class="wrap">
+    <a class="brand" href="#top">AI Application Notes</a>
+    <nav class="nav" aria-label="Main">
+      <a class="link" href="#item-1">Items</a>
+      <a class="link" href="#recap">Recap</a>
+      <a class="link" href="#test-yourself">Test yourself</a>
+      <a class="btn small" href="#up-next">Part B</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="dark" aria-label="Article title">
+    <div class="wrap hero">
+      <div>
+        <p class="crumb">AI Application series &middot; Part A &middot; Foundations</p>
+        <h1>AI Application: <span>The Price of a Question</span></h1>
+        <p class="lede">We built a Q&amp;A bot over a set of PDFs, then asked the questions that matter for any AI product: what does one answer cost, who caused it, and how do we stop it running away?</p>
+        <p class="meta">A hands-on lab with a document Q&amp;A bot &middot; 8 items</p>
+      </div>
+      <div class="panel" role="group" aria-label="An example call, itemised like a receipt">
+        <h2>One example call</h2>
+        <div class="rline"><span>Input tokens</span><span class="dots"></span><span>1,196</span><span class="amt">$0.001196</span></div>
+        <div class="rline"><span>Output tokens</span><span class="dots"></span><span>500</span><span class="amt">$0.002500</span></div>
+        <div class="rline"><span>Latency</span><span class="dots"></span><span>3.1 s</span></div>
+        <div class="rline"><span>Stop reason</span><span class="dots"></span><span>max_tokens</span></div>
+        <div class="rline total"><span>Total</span><span class="dots"></span><span>$0.003696</span></div>
+        <p class="note-line">Output was 29% of the tokens and 68% of the bill. The answer was also cut off at 500 tokens.</p>
+      </div>
+    </div>
+  </section>
+
+  <article class="block">
+    <div class="wrap">
+      <div class="prose">
+
+        <p style="margin-top:0">Every AI feature has a meter running behind it. A person types a question, a few hundred words travel to a model, a few hundred come back, and somebody gets billed for both directions.</p>
+        <p>This part covers the working foundation: how the bot finds an answer, what that answer costs, how we record it, and the first limits that keep a bug or a busy user from draining the account. Each item has a revision table, one rule to remember, and where it helps, a calculator you can play with. Throughout, we use one running example: a single call with 1,196 input tokens and 500 output tokens.</p>
+
+        <ul class="plain" aria-label="Items in this part">
+          <li><a href="#item-1"><span class="n">1</span><b>The RAG pipeline</b></a></li>
+          <li><a href="#item-2"><span class="n">2</span><b>Tokens and cost per call</b></a></li>
+          <li><a href="#item-3"><span class="n">3</span><b>Logging</b></a></li>
+          <li><a href="#item-4"><span class="n">4</span><b>Budgets and projections</b></a></li>
+          <li><a href="#item-5"><span class="n">5</span><b>Spend controls and credits</b></a></li>
+          <li><a href="#item-6"><span class="n">6</span><b>Cost attribution</b></a></li>
+          <li><a href="#item-7"><span class="n">7</span><b>Guardrails v1</b></a></li>
+          <li><a href="#item-8"><span class="n">8</span><b>Dashboard and observability</b></a></li>
+        </ul>
+
+        <!-- ============ 1 ============ -->
+        <section class="item" id="item-1">
+          <p class="label">Item 1 &middot; RAG pipeline</p>
+          <h2>Fetch first, then ask</h2>
+          <p class="sub">Claude has never read your documents. Sending whole documents with every question can cost tens of thousands of tokens a time. Sending only the four most relevant chunks costs about 1,200.</p>
+
+          <p class="flowlabel">Phase A &middot; indexing, once, free</p>
+          <ol class="flow"><li>Extract text</li><li>Chunk</li><li>Embed</li><li>Store in ChromaDB</li></ol>
+          <p class="flowlabel">Phase B &middot; every question, costs money</p>
+          <ol class="flow"><li>Embed question</li><li>Find top 4 chunks</li><li>Build prompt</li><li>Claude answers</li><li>Log cost</li></ol>
+
+          <div class="tablewrap"><table class="kv"><tbody>
+            <tr><th scope="row">What it is</th><td>Retrieval-Augmented Generation. Find the relevant text first, then let Claude answer from it.</td></tr>
+            <tr><th scope="row">Indexing</th><td>pypdf extracts text, which is cut into 800-character chunks with 100 characters of overlap. Each chunk is embedded and stored. It runs on your PC and costs nothing.</td></tr>
+            <tr><th scope="row">Querying</th><td>The question is embedded the same way, the 4 closest chunks are found, a prompt is built ("answer using only this context"), Claude answers, and the call is logged.</td></tr>
+            <tr><th scope="row">Key terms</th><td><b>Chunk</b>: a small piece of text. <b>Embedding</b>: numbers that capture meaning. <b>Vector DB</b>: searches by meaning, not keywords. <b>Top-k</b>: how many chunks are sent.</td></tr>
+            <tr><th scope="row">Why overlap</th><td>A sentence sitting on a chunk boundary is not cut in half.</td></tr>
+            <tr><th scope="row">Tuning knobs</th><td>Chunk size, overlap, <code>TOP_K</code>, <code>MAX_TOKENS</code>. Raising k gives better recall at higher cost.</td></tr>
+            <tr><th scope="row">Example numbers</th><td>In our example, 29 pages became 125 chunks. About 1,200 tokens are sent per question.</td></tr>
+          </tbody></table></div>
+          <div class="note"><b>Remember</b><span>If retrieval picks the wrong chunks, Claude answers wrong even though Claude itself is fine.</span></div>
+        </section>
+
+        <!-- ============ 2 ============ -->
+        <section class="item" id="item-2">
+          <p class="label">Item 2 &middot; Tokens and cost per call</p>
+          <h2>Tokens: the meter that is always running</h2>
+          <p class="sub">A token is a piece of text about three or four characters long. Billing counts tokens in both directions, and the two directions are priced differently.</p>
+
+          <div class="tablewrap"><table class="kv"><tbody>
+            <tr><th scope="row">Two meters</th><td><b>Input</b>: everything you send (instruction, chunks, question), $1 per million. <b>Output</b>: everything Claude writes, $5 per million. These are placeholder prices; check the pricing page.</td></tr>
+            <tr><th scope="row">Formula</th><td><code>in / 1M &times; in_price + out / 1M &times; out_price</code></td></tr>
+            <tr><th scope="row">Example call</th><td>1,196 in = $0.0012. 500 out = $0.0025. Total $0.0037.</td></tr>
+            <tr><th scope="row">Key insight</th><td>Output was 29% of the tokens but 68% of the cost.</td></tr>
+            <tr><th scope="row">Hidden costs</th><td>Thinking tokens count as output. Retrieved chunks repeat on every call. Retries are billed. Cut-off answers are billed too.</td></tr>
+            <tr><th scope="row">Scale effect</th><td>At $0.0032 a question: 100 a day is about $10 a month, 10,000 a day is about $960 a month, 100,000 a day is about $9,600 a month.</td></tr>
+            <tr><th scope="row">Cost levers</th><td>Fewer or shorter chunks, shorter answers, a cheaper model for easy questions, caching, prompt caching.</td></tr>
+          </tbody></table></div>
+
+          <div class="calc" aria-labelledby="calc-a-title">
+            <h3 id="calc-a-title">Price one call</h3>
+            <p class="hint">Starts with the example call. Change the numbers and watch where the money goes.</p>
+            <div class="fields">
+              <label for="a-in">Input tokens<input id="a-in" type="number" min="0" step="1" value="1196" inputmode="numeric"></label>
+              <label for="a-out">Output tokens<input id="a-out" type="number" min="0" step="1" value="500" inputmode="numeric"></label>
+              <label for="a-pin">$ / 1M input<input id="a-pin" type="number" min="0" step="0.01" value="1" inputmode="decimal"></label>
+              <label for="a-pout">$ / 1M output<input id="a-pout" type="number" min="0" step="0.01" value="5" inputmode="decimal"></label>
+            </div>
+            <div class="stats" aria-live="polite">
+              <div class="stat"><b id="a-ic">-</b><span>Input cost</span></div>
+              <div class="stat"><b id="a-oc">-</b><span>Output cost</span></div>
+              <div class="stat"><b id="a-t">-</b><span>Total per call</span></div>
+            </div>
+            <div class="bars">
+              <div class="bar-row"><span>Tokens out</span><i><b id="a-tb"></b></i><em id="a-tp">-</em></div>
+              <div class="bar-row cost"><span>Cost out</span><i><b id="a-cb"></b></i><em id="a-cp">-</em></div>
+            </div>
+          </div>
+          <div class="note"><b>Remember</b><span>Output tokens are the expensive half of every call.</span></div>
+        </section>
+
+        <!-- ============ 3 ============ -->
+        <section class="item" id="item-3">
+          <p class="label">Item 3 &middot; Logging</p>
+          <h2>Keep the receipts</h2>
+          <p class="sub">Every question becomes one row in <code>usage.db</code>. Reports, budgets, quotas and charts are all different ways of reading that one table.</p>
+
+          <div class="tablewrap"><table class="kv"><tbody>
+            <tr><th scope="row">What we store</th><td>Time, user, question, model, input and output tokens, input and output cost, total cost, latency, stop reason, and an <code>is_demo</code> flag.</td></tr>
+            <tr><th scope="row">Principle</th><td>Log raw facts once, then derive many views from them.</td></tr>
+            <tr><th scope="row">What it powers</th><td>The report command, budget left, daily cap and user quota, top-5 costly questions, cost per user, cut-off rate, the audit tab.</td></tr>
+            <tr><th scope="row">Design choices</th><td>Cost is stored per row because prices change. Demo rows are flagged so fake data never touches a real budget. Old tables upgrade themselves. The row is written after the call because tokens are only known then.</td></tr>
+            <tr><th scope="row">Not logged yet</th><td>Which chunks were retrieved, the answer text, time per step, prompt version, trace ID, errors and retries.</td></tr>
+            <tr><th scope="row">Privacy risk</th><td>Questions can contain names and other personal details, especially in sensitive areas such as legal or health topics. Mask personal data before saving and set a retention period.</td></tr>
+          </tbody></table></div>
+          <div class="note"><b>Remember</b><span>You cannot log the past. Decide now what you will want to slice by later.</span></div>
+        </section>
+
+        <!-- ============ 4 ============ -->
+        <section class="item" id="item-4">
+          <p class="label">Item 4 &middot; Budgets and projections</p>
+          <h2>Budgets, and the forecast that lies politely</h2>
+          <p class="sub">A budget asks how much you have spent. A projection asks how much you will spend. The second one is only as good as the average underneath it.</p>
+
+          <div class="tablewrap"><table class="kv"><tbody>
+            <tr><th scope="row">Formulas</th><td>Average = total / calls. Projection = average &times; volume. Runway = budget left / average.</td></tr>
+            <tr><th scope="row">Core formula</th><td><code>monthly cost = users &times; questions per user &times; cost per question</code></td></tr>
+            <tr><th scope="row">Example numbers</th><td>13 calls, $0.0410 total, $0.00315 average, $31.53 per 10,000 questions, $4.959 left, about 1,570 questions of runway.</td></tr>
+            <tr><th scope="row">Traps</th><td>A small sample. Outliers hidden by the average. A question mix that changes in real use. Caching, which lowers cost later.</td></tr>
+            <tr><th scope="row">Better habit</th><td>Quote a range: the average case and the worst case (maximum and 95th percentile).</td></tr>
+            <tr><th scope="row">Budget levels</th><td>Total, daily, per user, per feature, per request (<code>max_tokens</code>).</td></tr>
+            <tr><th scope="row">Ours vs. console</th><td>Our <code>BUDGET</code> is an early warning that counts only this app. The Anthropic console is the truth.</td></tr>
+          </tbody></table></div>
+
+          <div class="tablewrap"><table class="grid">
+            <thead><tr><th>Scenario</th><th class="num">Users</th><th class="num">Questions each</th><th class="num">Monthly cost</th></tr></thead>
+            <tbody>
+              <tr><td>Small pilot</td><td class="num">50</td><td class="num">20</td><td class="num">$3.20</td></tr>
+              <tr><td>Support team</td><td class="num">500</td><td class="num">20</td><td class="num">$32</td></tr>
+              <tr><td>Public app</td><td class="num">50,000</td><td class="num">20</td><td class="num">$3,200</td></tr>
+              <tr><td>Public app, power users</td><td class="num">50,000</td><td class="num">100</td><td class="num">$16,000</td></tr>
+            </tbody>
+          </table></div>
+
+          <div class="calc" aria-labelledby="calc-b-title">
+            <h3 id="calc-b-title">Forecast a month</h3>
+            <p class="hint">Usage per user often matters more than the number of users. Try doubling questions per user.</p>
+            <div class="fields">
+              <label for="b-u">Users<input id="b-u" type="number" min="0" step="1" value="500" inputmode="numeric"></label>
+              <label for="b-q">Questions per user<input id="b-q" type="number" min="0" step="1" value="20" inputmode="numeric"></label>
+              <label for="b-c">$ per question<input id="b-c" type="number" min="0" step="0.0001" value="0.0032" inputmode="decimal"></label>
+              <label for="b-m">Worst case &times;<input id="b-m" type="number" min="1" step="0.1" value="1.5" inputmode="decimal"></label>
+            </div>
+            <div class="stats" aria-live="polite">
+              <div class="stat"><b id="b-n">-</b><span>Questions a month</span></div>
+              <div class="stat"><b id="b-a">-</b><span>Average case</span></div>
+              <div class="stat"><b id="b-w">-</b><span>Worst case</span></div>
+            </div>
+          </div>
+          <div class="note"><b>Remember</b><span>Quote a range, not one number.</span></div>
+        </section>
+
+        <!-- ============ 5 ============ -->
+        <section class="item" id="item-5">
+          <p class="label">Item 5 &middot; Spend controls and credits</p>
+          <h2>Two locks on the same door</h2>
+          <p class="sub">One lock lives at the provider and one lives in your code. If one fails, the other still holds.</p>
+
+          <div class="tablewrap"><table class="kv"><tbody>
+            <tr><th scope="row">Two layers</th><td><b>Provider layer</b>: the console's monthly spend limit and email alerts. <b>App layer</b>: <code>costs.py</code>.</td></tr>
+            <tr><th scope="row">Console controls</th><td>A monthly spend limit (a hard stop), an email notification at an amount you choose, and the prepaid balance itself.</td></tr>
+            <tr><th scope="row">Credits</th><td>Prepaid and non-refundable. Anthropic's credit terms say usage credits expire one year after issue, and unused credits are lost if the account is closed. Confirm your exact date in Billing.</td></tr>
+            <tr><th scope="row">API key</th><td>A password that spends your money. Use one key per project, keep it out of code and chat, rotate it if exposed, and give it a clear name.</td></tr>
+            <tr><th scope="row">Who catches what</th><td>A leaked key used elsewhere: only the provider layer. A bug loop or one user spamming: the app layer, much sooner.</td></tr>
+            <tr><th scope="row">Rate limits</th><td>Maximum requests or tokens per minute. Exceed them and you get an error (covered under reliability).</td></tr>
+            <tr><th scope="row">Action</th><td>Lower the default monthly limit to about $10, add an alert at $3 or $5, and use a separate key for the lab.</td></tr>
+          </tbody></table></div>
+          <div class="note"><b>Remember</b><span>Defense in depth: provider limits catch what your code cannot see.</span></div>
+        </section>
+
+        <!-- ============ 6 ============ -->
+        <section class="item" id="item-6">
+          <p class="label">Item 6 &middot; Cost attribution</p>
+          <h2>Who spent it?</h2>
+          <p class="sub">A total of $50 tells you nothing. "$30 came from one user's broad questions" tells you what to fix.</p>
+
+          <div class="tablewrap"><table class="kv"><tbody>
+            <tr><th scope="row">What it is</th><td>Answering who or what caused a cost.</td></tr>
+            <tr><th scope="row">Dimensions</th><td>User, model, feature, team or tenant, question type, time. We cover user and time today.</td></tr>
+            <tr><th scope="row">How we did it</th><td>A <code>user</code> column, the <code>--user</code> flag, the Users tab, and a per-user daily quota.</td></tr>
+            <tr><th scope="row">What it reveals</th><td>In the example below, User C asks the fewest questions but pays the most per question, which points to broad "summarise everything" requests.</td></tr>
+            <tr><th scope="row">Uses</th><td>Quotas, abuse detection, chargeback, pricing, choosing what to optimise first.</td></tr>
+            <tr><th scope="row">Limits</th><td>Names are self-declared because there is no login. There is no feature tag. Shared costs are invisible.</td></tr>
+          </tbody></table></div>
+
+          <div class="tablewrap"><table class="grid">
+            <thead><tr><th>User (illustrative)</th><th class="num">Questions</th><th class="num">Total</th><th class="num">Per question</th></tr></thead>
+            <tbody>
+              <tr><td>User A</td><td class="num">40</td><td class="num">$0.12</td><td class="num">$0.0030</td></tr>
+              <tr><td>User B</td><td class="num">25</td><td class="num">$0.09</td><td class="num">$0.0036</td></tr>
+              <tr><td>User C</td><td class="num">5</td><td class="num">$0.04</td><td class="num">$0.0080</td></tr>
+            </tbody>
+          </table></div>
+          <div class="note"><b>Remember</b><span>Tag at the moment of the call. You cannot reconstruct who caused a cost afterwards.</span></div>
+        </section>
+
+        <!-- ============ 7 ============ -->
+        <section class="item" id="item-7">
+          <p class="label">Item 7 &middot; Guardrails v1</p>
+          <h2>Say no before you pay</h2>
+          <p class="sub">A guardrail is a rule around the model. Version one is about money: a total budget, a daily cap and a quota per user.</p>
+
+          <p class="flowlabel">Inside <code>ask()</code></p>
+          <ol class="flow"><li>Question arrives</li><li>Check limits</li><li class="stop">Blocked? Return, $0 spent</li><li>Retrieve</li><li>Call Claude</li><li>Log cost</li></ol>
+
+          <div class="tablewrap"><table class="kv"><tbody>
+            <tr><th scope="row">Three families</th><td>Cost (built), safety and quality (still to come).</td></tr>
+            <tr><th scope="row">Our rules</th><td>Total $5.00, daily cap $0.50, user quota $0.25 a day, warning at 80%, answers limited to 500 tokens.</td></tr>
+            <tr><th scope="row">Fail fast</th><td>Check before the expensive step, and run the cheapest checks first.</td></tr>
+            <tr><th scope="row">Soft vs. hard</th><td>Soft warns at 80% and still allows. Hard blocks at 100%.</td></tr>
+            <tr><th scope="row">Weaknesses</th><td>One call can overshoot, because we check spend so far. Two simultaneous requests can both pass. The user name is self-declared. The count lives in a local file.</td></tr>
+            <tr><th scope="row">Worked example</th><td>$0.2499 spent of a $0.25 quota. The next question passes the check and costs $0.003, so the final spend is $0.2529.</td></tr>
+            <tr><th scope="row">Middleware idea</th><td>A chain of small checks every request passes through: auth, rate limit, budget, input safety, output safety, log.</td></tr>
+          </tbody></table></div>
+          <div class="note"><b>Remember</b><span>Fail fast. Check before the expensive step, so a rejected question costs nothing.</span></div>
+        </section>
+
+        <!-- ============ 8 ============ -->
+        <section class="item" id="item-8">
+          <p class="label">Item 8 &middot; Dashboard and observability</p>
+          <h2>If you can't see it, you can't fix it</h2>
+          <p class="sub">Observability means seeing what the system does and why, from the outside. A dashboard is one way to look.</p>
+
+          <div class="tablewrap"><table class="kv"><tbody>
+            <tr><th scope="row">Three pillars</th><td><b>Logs</b> (we have them), <b>metrics</b> (we have them, as the dashboard), <b>traces</b> (missing). A trace shows which step of one request was slow.</td></tr>
+            <tr><th scope="row">AI metrics</th><td>Cost, speed, traffic, errors, quality, and retrieval health.</td></tr>
+            <tr><th scope="row">Our tabs</th><td>Overview: on track? FinOps: where is the money going? Users: who? Guardrails: near a limit? Governance: what happened? Ask: try it.</td></tr>
+            <tr><th scope="row">How it works</th><td><code>usage.db</code> to pandas to plotly to Streamlit. Every click re-runs the script from the top.</td></tr>
+            <tr><th scope="row">Dashboard vs. alert</th><td>A dashboard is pull: you go and look. An alert is push: it tells you. Runaway bugs at night need alerts.</td></tr>
+            <tr><th scope="row">Limits</th><td>A local file, no auto-refresh, no traces, and demo data can mislead if left switched on.</td></tr>
+            <tr><th scope="row">Tools later</th><td>Langfuse, LangSmith, OpenTelemetry, Grafana. Building it by hand first shows what those tools do.</td></tr>
+          </tbody></table></div>
+          <div class="note"><b>Remember</b><span>A chart should answer a question someone will act on.</span></div>
+        </section>
+
+        <!-- ============ recap ============ -->
+        <section class="item" id="recap">
+          <p class="label">Part A in one glance</p>
+          <h2>Rules, settings and commands</h2>
+
+          <div class="tablewrap"><table class="kv"><tbody>
+            <tr><th scope="row">Design</th><td>Retrieve first, send little, keep money logic in its own file.</td></tr>
+            <tr><th scope="row">Cost</th><td>Output tokens are the expensive part.</td></tr>
+            <tr><th scope="row">Control</th><td>Check limits before the expensive step.</td></tr>
+            <tr><th scope="row">Data</th><td>Store cost per row and tag everything now.</td></tr>
+            <tr><th scope="row">Safety net</th><td>Provider-side limits catch what your code cannot.</td></tr>
+            <tr><th scope="row">Visibility</th><td>Push alerts beat pull dashboards in an emergency.</td></tr>
+          </tbody></table></div>
+
+          <div class="tablewrap"><table class="kv"><tbody>
+            <tr><th scope="row">Model</th><td><code>claude-haiku-5-5</code></td></tr>
+            <tr><th scope="row">Prices (placeholder)</th><td>$1 per million input, $5 per million output</td></tr>
+            <tr><th scope="row">Chunking</th><td>800 characters, 100 overlap, <code>TOP_K</code> 4</td></tr>
+            <tr><th scope="row">Answer limit</th><td><code>MAX_TOKENS</code> 500</td></tr>
+            <tr><th scope="row">Limits</th><td>Budget $5.00, daily cap $0.50, user quota $0.25</td></tr>
+          </tbody></table></div>
+
+          <div class="codeblock"><h3>Every time you open a new terminal</h3>
+<pre>cd path\to\ai-lab
+$env:ANTHROPIC_API_KEY="paste_your_key_here"</pre><button class="btn outline small copy" type="button">Copy</button></div>
+          <div class="codeblock"><h3>Read the PDFs, ask, report</h3>
+<pre>py -3.13 app.py ingest
+py -3.13 app.py ask --user alice "your question"
+py -3.13 app.py report</pre><button class="btn outline small copy" type="button">Copy</button></div>
+          <div class="codeblock"><h3>Open the dashboard</h3>
+<pre>py -3.13 -m streamlit run dashboard.py --theme.base dark</pre><button class="btn outline small copy" type="button">Copy</button></div>
+        </section>
+
+        <!-- ============ self-test ============ -->
+        <section class="item selftest" id="test-yourself">
+          <p class="label">Test yourself</p>
+          <h2>Eight questions, answers inside</h2>
+          <details><summary>1. Why does ingest cost nothing but ask costs money?</summary><p>Ingest runs locally on your PC. Ask sends tokens to Claude, which bills per token.</p></details>
+          <details><summary>2. Claude writes 1,000 tokens to a 1,000-token prompt. Which half costs more?</summary><p>Output costs 5 times more at these prices: $0.005 against $0.001.</p></details>
+          <details><summary>3. Why store the cost in each row?</summary><p>Prices change. A stored cost stays correct for that day, while recalculating later would rewrite history.</p></details>
+          <details><summary>4. Why is quoting only the average risky?</summary><p>It hides spikes. A burst of heavy questions blows past a forecast built on the average.</p></details>
+          <details><summary>5. A thief uses your key to call Claude directly. Which layer protects you?</summary><p>The provider layer: the monthly limit and the alert. Your app never sees those calls.</p></details>
+          <details><summary>6. What should you tag now to learn which feature is expensive later?</summary><p>A <code>feature</code> column on every call.</p></details>
+          <details><summary>7. $0.2499 of a $0.25 quota is spent and the next question costs $0.003. Allowed?</summary><p>Yes. The check passes, and the final spend is $0.2529.</p></details>
+          <details><summary>8. Which pillar shows whether retrieval or Claude was the slow step?</summary><p>Traces. Logs and metrics show that a request was slow, not which step.</p></details>
+        </section>
+
+      </div>
+    </div>
+  </article>
+
+  <section id="up-next" class="block soft" aria-labelledby="next-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="next-h">From a working bot to a trustworthy product</h2>
+        <p>Part B takes the same bot and asks what it needs before real people depend on it.</p>
+      </div>
+      <ol class="steps">
+        <li><h3>Debug RAG</h3><p>Profiling, chunking, retrievers, fusion, reranking</p></li>
+        <li><h3>Latency</h3><p>Prompt caching, semantic caching, streaming</p></li>
+        <li><h3>Cost reduction</h3><p>Pruning, compression, summarisation, routing</p></li>
+        <li><h3>Multi-query handling</h3><p>Metadata filtering, query routing</p></li>
+        <li><h3>Safety</h3><p>Guardrails, middleware, human review, prompt injection, PII</p></li>
+        <li><h3>Evaluation</h3><p>Test set, hit rate, cost per correct answer</p></li>
+        <li><h3>Reliability</h3><p>Retries, timeouts, fallbacks, rate limits</p></li>
+        <li><h3>Long-running tasks</h3><p>State, orchestrator, multi-agent systems</p></li>
+        <li><h3>RAG scaling</h3><p>Horizontal and vertical scaling, sharding</p></li>
+        <li><h3>Pricing</h3><p>Cost to price, margin per plan</p></li>
+        <li><h3>Governance</h3><p>Audit, access control, privacy, retention</p></li>
+        <li><h3>Production extras</h3><p>Freshness, multi-tenancy, prompt versions, batch</p></li>
+      </ol>
+      <p class="fine">All dollar figures use placeholder prices ($1 per million input tokens, $5 per million output tokens). Check Anthropic's pricing page before relying on any number here. Credit expiry terms can vary, so confirm the date shown in your own console.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="row">
+      <span>&copy; 2026 AI Application Notes</span>
+      <nav aria-label="Page sections">
+        <a href="#top">Top</a>
+        <a href="#item-1">Items</a>
+        <a href="#recap">Recap</a>
+        <a href="#test-yourself">Test yourself</a>
+        <a href="#up-next">Part B</a>
+      </nav>
+    </div>
+    <p class="note-f">Learning notes from a hands-on lab. General information, not legal or professional advice.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  function $(id) { return document.getElementById(id); }
+  function num(id) { var v = parseFloat($(id).value); return isFinite(v) && v >= 0 ? v : 0; }
+  function usd(x) { return "$" + (x < 0.1 ? x.toFixed(6) : x < 100 ? x.toFixed(4) : x.toLocaleString("en-US", { maximumFractionDigits: 0 })); }
+  function money(x) { return "$" + x.toLocaleString("en-US", { maximumFractionDigits: x < 100 ? 2 : 0, minimumFractionDigits: x < 100 ? 2 : 0 }); }
+
+  function calcA() {
+    var i = num("a-in"), o = num("a-out"), pi = num("a-pin"), po = num("a-pout");
+    var ic = i / 1e6 * pi, oc = o / 1e6 * po, t = ic + oc;
+    $("a-ic").textContent = usd(ic);
+    $("a-oc").textContent = usd(oc);
+    $("a-t").textContent = usd(t);
+    var tokShare = (i + o) ? o / (i + o) * 100 : 0;
+    var costShare = t ? oc / t * 100 : 0;
+    $("a-tb").style.width = tokShare + "%";
+    $("a-cb").style.width = costShare + "%";
+    $("a-tp").textContent = Math.round(tokShare) + "%";
+    $("a-cp").textContent = Math.round(costShare) + "%";
+  }
+  function calcB() {
+    var u = num("b-u"), q = num("b-q"), c = num("b-c"), m = Math.max(1, num("b-m"));
+    var n = u * q, avg = n * c;
+    $("b-n").textContent = n.toLocaleString("en-US");
+    $("b-a").textContent = money(avg);
+    $("b-w").textContent = money(avg * m);
+  }
+  ["a-in", "a-out", "a-pin", "a-pout"].forEach(function (id) { $(id).addEventListener("input", calcA); });
+  ["b-u", "b-q", "b-c", "b-m"].forEach(function (id) { $(id).addEventListener("input", calcB); });
+  calcA(); calcB();
+
+  document.querySelectorAll(".copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var pre = btn.parentNode.querySelector("pre");
+      var text = pre.textContent;
+      function selectFallback() {
+        var r = document.createRange(); r.selectNodeContents(pre);
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        btn.textContent = "Selected";
+        setTimeout(function () { btn.textContent = "Copy"; }, 1500);
+      }
+      try {
+        navigator.clipboard.writeText(text).then(function () {
+          btn.textContent = "Copied";
+          setTimeout(function () { btn.textContent = "Copy"; }, 1500);
+        }, selectFallback);
+      } catch (e) { selectFallback(); }
+    });
+  });
+})();
+</script>
+
+</body></html>
