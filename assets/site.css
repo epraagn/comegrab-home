@@ -226,3 +226,11 @@ footer .note{margin-top:18px;font-size:.88rem;opacity:.75;max-width:48em}
 .websrc li{margin-top:.25em;font-size:.9rem}
 .websrc a{color:var(--navy);text-underline-offset:3px;overflow-wrap:anywhere}
 .bubble p.rec{margin-top:1em;padding:10px 14px;background:var(--soft);border-left:3px solid var(--navy);font-weight:500;color:var(--navy)}
+
+.prose .table-wrap{margin-top:1.4em;overflow-x:auto;border:1px solid var(--line)}
+.prose table{width:100%;border-collapse:collapse;font-size:.95rem;min-width:420px}
+.prose th{background:var(--navy);color:#fff;text-align:left;padding:10px 14px;font-weight:600}
+.prose td{padding:10px 14px;border-top:1px solid var(--line);vertical-align:top}
+.prose tbody tr:nth-child(even){background:var(--soft)}
+.prose td:first-child{font-weight:600;color:var(--navy)}
+.prose .pain{padding:10px 14px;background:var(--soft);border-left:3px solid var(--gold)}
