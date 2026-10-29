@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agentic hooks: rules your AI agent cannot talk its way around | ComeGrab</title>
+<meta name="description" content="A plain-language guide to hooks, the fixed checkpoints that let a business control what an AI agent may do, instead of just asking it nicely in a prompt.">
+<link rel="canonical" href="https://comegrab.in/blogs/agentic-hooks-rules-your-ai-agent-cannot-ignore.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Agentic hooks: rules your AI agent cannot talk its way around | ComeGrab">
+<meta property="og:description" content="A plain-language guide to hooks, the fixed checkpoints that let a business control what an AI agent may do, instead of just asking it nicely in a prompt.">
+<meta property="og:url" content="https://comegrab.in/blogs/agentic-hooks-rules-your-ai-agent-cannot-ignore.html">
+<meta name="theme-color" content="#0B2545">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="../" aria-label="ComeGrab home">ComeGrab</a>
+    <nav class="nav" aria-label="Main">
+      <a class="link" href="../consulting/">Consulting</a>
+      <a class="link" href="../legal/">Legal help</a>
+      <a class="link" href="../blogs/" aria-current="page">Blogs</a>
+      <a class="link" href="../shop/">Shop</a>
+      <a class="link" href="../games/">Games</a>
+      <a class="btn small" href="../index.html#contact">Contact us</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="dark" aria-label="Article title">
+    <div class="wrap page-head">
+      <p class="crumb"><a href="./">Blogs</a></p>
+      <h1>Agentic hooks: rules your AI agent cannot talk its way around</h1>
+      <p class="lede">A plain-language guide to hooks, the fixed checkpoints that let a business control what an AI agent may do, instead of just asking it nicely in a prompt.</p>
+    </div>
+  </section>
+  <article class="block">
+    <div class="wrap">
+      <div class="prose">
+        <p>Give an AI agent access to your files, your email or your customer records, and one question matters more than any other: what stops it from doing the wrong thing? Most teams answer with a sentence in the prompt, such as “never delete customer data.” That sentence is a request, not a rule. A hook turns it into a rule.</p>
+<h2>What a hook is</h2>
+<p>A hook is a small piece of ordinary code that the system runs at a fixed moment in the agent’s work, every single time. For example, just before the agent uses a tool, or just after it edits a file. The hook looks at what is about to happen (or what just happened) and makes a decision. The AI model does not get a vote on whether the hook runs.</p>
+<p>The key word is <b>fixed</b>. A prompt depends on the model reading, remembering and choosing to follow it. A hook depends on nothing but the code. It behaves the same on a calm Monday and in the middle of a confusing, multi-step task.</p>
+<h2>Prompts ask, hooks enforce</h2>
+<div class="table-wrap"><table>
+<thead><tr><th></th><th>Instruction in a prompt</th><th>Hook</th></tr></thead>
+<tbody>
+<tr><td>Who decides</td><td>The model</td><td>Your code</td></tr>
+<tr><td>Can it be skipped</td><td>Yes, if the model forgets or is misled</td><td>No, it runs at that step every time</td></tr>
+<tr><td>Best for</td><td>Style, tone, preferences</td><td>Limits, approvals, safety, records</td></tr>
+<tr><td>Can you prove it ran</td><td>Hard to say</td><td>Yes, it can write a log entry</td></tr>
+</tbody></table></div>
+<h2>Where hooks sit</h2>
+<ul>
+<li><b>Before an action.</b> Check a request to use a tool, send a message or call a system, then let it through or stop it.</li>
+<li><b>After an action.</b> Check what a tool returned, or what a file edit changed, before the agent moves on.</li>
+<li><b>When information is fetched.</b> Strip out documents or fields the agent should never see.</li>
+<li><b>At approval points.</b> Pause a risky step until a person says yes.</li>
+<li><b>At the end.</b> Confirm the work meets your checklist before it counts as done.</li>
+</ul>
+<h2>What a hook can decide</h2>
+<p>A hook is not just a stop sign. It can allow the step, block it with a reason the agent can read, change it (for example, mask a phone number), add useful context, or send it to a person for approval. In every case it can leave a record of what it saw and what it chose.</p>
+<h2>Everyday examples</h2>
+<ul>
+<li><b>A coding assistant</b> edits a file. A hook runs the tests and the security scan straight away, and rejects the change if either fails.</li>
+<li><b>A support agent</b> drafts an email. A hook blocks it if the address is outside your approved domains.</li>
+<li><b>A finance assistant</b> wants to approve a payment. A hook sends anything above a set amount to a manager first.</li>
+<li><b>A research agent</b> pulls documents. A hook removes personal data and confidential files before the model reads them.</li>
+<li><b>Any agent</b> using a production system. A hook refuses delete and overwrite commands and logs the attempt.</li>
+</ul>
+<h2>What can go wrong</h2>
+<ul>
+<li><b>Friction.</b> Every check adds a little time, and every approval needs a person. Put hooks where the risk is real, not on every step.</li>
+<li><b>A weak hook is a false comfort.</b> If the check can be sidestepped, people will believe the agent is controlled when it is not.</li>
+<li><b>A missing hook means no control.</b> An agent with no checkpoint on a risky action simply has the permission it was given.</li>
+<li><b>Problems show up late.</b> A flawed hook is often found only after the agent has done something it should not have.</li>
+</ul>
+<h2>How to get started</h2>
+<ol>
+<li>List what your agent can touch: files, systems, money, messages, customer data.</li>
+<li>Mark the actions that would hurt most if they went wrong or could not be undone.</li>
+<li>Put a hook on each of those, starting with “block,” “ask a person” and “log.”</li>
+<li>Tie each decision to who the agent is acting for and why, not just to the fact that it is logged in.</li>
+<li>Treat hook code like any other critical code: review it, test it, version it, and re-check it whenever the agent gains a new ability.</li>
+</ol>
+<h2>The point</h2>
+<p>The more freedom an agent has, the less you can rely on good intentions written in a prompt. Use prompts to guide the agent’s work and hooks to guard the edges. If the answer to “what stops it?” is a line of code that always runs, you have a control. If the answer is “we asked it not to,” you have a hope.</p>
+<div class="note">Using AI agents in your business and not sure where the checkpoints belong? We can help you map the risks and design sensible controls. <a href="../consulting/">Talk to us about AI transformation</a>.</div>
+        <a class="back" href="./">Back to all articles</a>
+      </div>
+    </div>
+  </article>
+  <section id="contact" class="block soft" aria-labelledby="contact-h">
+    <div class="wrap contact">
+      <div>
+        <h2 id="contact-h">Want to talk it through?</h2>
+        <p>We are happy to discuss any of this for your own business.</p>
+        <div class="cta-row">
+          <a class="btn" href="mailto:epraagn@gmail.com?subject=Enquiry%20from%20comegrab.in">Email us</a>
+          <a class="btn outline" href="https://wa.me/919582237599" rel="noopener">WhatsApp</a>
+        </div>
+      </div>
+      <ul class="details">
+        <li><span>Email</span><a href="mailto:epraagn@gmail.com">epraagn@gmail.com</a></li>
+        <li><span>WhatsApp</span><a href="https://wa.me/919582237599" rel="noopener">+91 95822 37599</a></li>
+        <li><span>LinkedIn</span><a href="https://www.linkedin.com/in/manvita-singh-6ba020105/" rel="noopener">Manvita Singh - Founder</a></li>
+      </ul>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="wrap">
+    <div class="row">
+      <span>&copy; 2026 ComeGrab</span>
+      <nav aria-label="Our sites">
+        <a href="../">Home</a>
+        <a href="../consulting/">Consulting</a>
+        <a href="../legal/">Legal help</a>
+        <a href="../blogs/">Blogs</a>
+        <a href="../shop/">Shop</a>
+        <a href="../games/">Games</a>
+      </nav>
+    </div>
+    <p class="note">Information on these sites is general and is not legal or professional advice for your situation. Views expressed are our own.</p>
+  </div>
+</footer>
+</body>
+</html>
