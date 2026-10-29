@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>From a 50-line script to a real AI product: add tools only when pain appears | ComeGrab</title>
+<meta name="description" content="A six-month story of how an AI product grows from a 50-line script to a real system, and the tool a team picks up each time a specific pain appears.">
+<link rel="canonical" href="https://comegrab.in/blogs/from-script-to-product-ai-tools-when-pain-appears.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="From a 50-line script to a real AI product: add tools only when pain appears | ComeGrab">
+<meta property="og:description" content="A six-month story of how an AI product grows from a 50-line script to a real system, and the tool a team picks up each time a specific pain appears.">
+<meta property="og:url" content="https://comegrab.in/blogs/from-script-to-product-ai-tools-when-pain-appears.html">
+<meta name="theme-color" content="#0B2545">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="../" aria-label="ComeGrab home">ComeGrab</a>
+    <nav class="nav" aria-label="Main">
+      <a class="link" href="../consulting/">Consulting</a>
+      <a class="link" href="../legal/">Legal help</a>
+      <a class="link" href="../blogs/" aria-current="page">Blogs</a>
+      <a class="link" href="../shop/">Shop</a>
+      <a class="link" href="../games/">Games</a>
+      <a class="btn small" href="../index.html#contact">Contact us</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="dark" aria-label="Article title">
+    <div class="wrap page-head">
+      <p class="crumb"><a href="./">Blogs</a></p>
+      <h1>From a 50-line script to a real AI product: add tools only when pain appears</h1>
+      <p class="lede">A six-month story of how an AI product grows from a 50-line script to a real system, and the tool a team picks up each time a specific pain appears.</p>
+    </div>
+  </section>
+  <article class="block">
+    <div class="wrap">
+      <div class="prose">
+        <p>Most AI products do not start as a big framework. They start as a short script that works, and grow one problem at a time. Here is the story of one such product over six months, and the tool the team picked up each time a real pain appeared.</p>
+<h2>Chapter 1 · Day 1: It works</h2>
+<p>You write a simple bot: PDFs, chunks, a vector database and one model call. You call the model through the Anthropic SDK directly.</p><ul><li>Cost per answer: about $0.0035.</li><li>Everything is visible and simple.</li></ul><p class="pain"><b>Tool they reach for:</b> the Anthropic SDK. Nothing more is needed yet.</p>
+<h2>Chapter 2 · Week 2: The glue code piles up</h2>
+<p>Users want Word files, web pages and a database as sources. Someone asks, “Can we try a different vector database or model?” Every swap means rewriting code.</p><p>The team reaches for <b>LangChain</b>: ready-made loaders, retrievers and prompt templates, chained in a line.</p>
+<h2>Chapter 3 · Month 1: The first wrong answer</h2>
+<p>A user complains. You open the logs and see only the final answer. Was retrieval wrong? Was the prompt wrong? Which step took 8 seconds? No idea.</p><p>The team adds tracing with <b>Langfuse</b> or <b>LangSmith</b>. Now every request shows each step, the tokens, the cost and the chunks retrieved. The failed case is saved as a test.</p>
+<h2>Chapter 4 · Month 2: The flow gets complicated</h2>
+<p>New rules arrive: classify the question, retrieve, draft, have a human approve risky answers, and retry on failure. A server restart loses half-finished requests. A straight chain cannot loop or wait.</p><p>The team moves to <b>LangGraph</b>: a graph with branches and loops, and saved state so a run resumes after a crash or waits days for approval.</p>
+<h2>Chapter 5 · Month 3: Prompt whack-a-mole</h2>
+<p>Every hand-edited prompt fixes one question and breaks another. A model upgrade breaks several.</p><p>The team builds an eval set (questions with correct answers) and a score. Then <b>DSPy</b> tunes the prompt against that score instead of by guesswork.</p>
+<h2>Chapter 6 · Month 4: “Can it do the research itself?”</h2>
+<p>The product now needs to read 20 documents, compare them, write a report and save it. That is an agent loop: think, use a tool, read the result, repeat. Writing it safely by hand is slow.</p><p>The team uses the <b>Claude Agent SDK</b>: the loop, file and search tools, permissions and hooks come built in. Safety rules go in as permissions, spend limits and hooks that block bad actions.</p>
+<h2>Chapter 7 · Month 5: The multi-agent temptation</h2>
+<p>Someone proposes a researcher, a writer and a reviewer, each its own agent. <b>CrewAI</b> makes that easy. It works, but LLM calls triple, and so do cost and latency.</p><p>The tracing from Chapter 3 shows the reviewer agent adds little. The team keeps two agents.</p>
+<h2>Chapter 8 · Month 6: The cost audit</h2>
+<p>Finance asks why the bill grew 8x. The trace and cost data point to long prompts, an agent loop that repeats tool calls, and thinking tokens.</p><p>The team trims context, caches repeated questions and sets per-user budgets. These are the basic guardrails from day one, grown up.</p>
+<h2>The whole story in one table</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Chapter</th><th>Pain that appears</th><th>Tool they reach for</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Nothing yet</td><td>Anthropic SDK</td></tr>
+<tr><td>2</td><td>Glue code, swapping parts</td><td>LangChain</td></tr>
+<tr><td>3</td><td>“Why was this wrong? What did it cost?”</td><td>Langfuse / LangSmith</td></tr>
+<tr><td>4</td><td>Loops, approvals, crash recovery</td><td>LangGraph</td></tr>
+<tr><td>5</td><td>Fragile hand-tuned prompts</td><td>Eval set + DSPy</td></tr>
+<tr><td>6</td><td>Tool-using autonomous tasks</td><td>Claude Agent SDK</td></tr>
+<tr><td>7</td><td>Role-split agent teams</td><td>CrewAI (then question it)</td></tr>
+<tr><td>8</td><td>Bill shock</td><td>Tracing data + cost controls</td></tr>
+</tbody></table></div>
+<h2>The lessons to remember</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Rule</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>A tool earns its place only when a specific pain appears.</td><td>Do not start with a framework. Start with the SDK and add tools as problems show up.</td></tr>
+<tr><td>Tracing comes early.</td><td>You cannot fix or price what you cannot see.</td></tr>
+<tr><td>More agents means more cost.</td><td>Add them only when the data says so.</td></tr>
+</tbody></table></div>
+<div class="note">Planning an AI-led change in your own business? We help teams choose the right tools in the right order. <a href="../consulting/">Talk to us about AI transformation</a>.</div>
+        <a class="back" href="./">Back to all articles</a>
+      </div>
+    </div>
+  </article>
+  <section id="contact" class="block soft" aria-labelledby="contact-h">
+    <div class="wrap contact">
+      <div>
+        <h2 id="contact-h">Want to talk it through?</h2>
+        <p>We are happy to discuss any of this for your own business.</p>
+        <div class="cta-row">
+          <a class="btn" href="mailto:epraagn@gmail.com?subject=Enquiry%20from%20comegrab.in">Email us</a>
+          <a class="btn outline" href="https://wa.me/919582237599" rel="noopener">WhatsApp</a>
+        </div>
+      </div>
+      <ul class="details">
+        <li><span>Email</span><a href="mailto:epraagn@gmail.com">epraagn@gmail.com</a></li>
+        <li><span>WhatsApp</span><a href="https://wa.me/919582237599" rel="noopener">+91 95822 37599</a></li>
+        <li><span>LinkedIn</span><a href="https://www.linkedin.com/in/prateek-agnihotri-579b2016/" rel="noopener">Prateek Agnihotri</a></li>
+      </ul>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="wrap">
+    <div class="row">
+      <span>&copy; 2026 ComeGrab</span>
+      <nav aria-label="Our sites">
+        <a href="../">Home</a>
+        <a href="../consulting/">Consulting</a>
+        <a href="../legal/">Legal help</a>
+        <a href="../blogs/">Blogs</a>
+        <a href="../shop/">Shop</a>
+        <a href="../games/">Games</a>
+      </nav>
+    </div>
+    <p class="note">Information on these sites is general and is not legal or professional advice for your situation. Views expressed are our own.</p>
+  </div>
+</footer>
+</body>
+</html>
