@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How Databricks connects telecom network operations and customer data | ComeGrab</title>
+<meta name="description" content="A case study in building one data platform on Databricks that finds network faults, proves root causes, measures SLAs and links network quality to customer complaints and churn.">
+<link rel="canonical" href="https://comegrab.in/blogs/databricks-telecom-case-study.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="How Databricks connects telecom network operations and customer data | ComeGrab">
+<meta property="og:description" content="A case study in building one data platform on Databricks that finds network faults, proves root causes, measures SLAs and links network quality to customer complaints and churn.">
+<meta property="og:url" content="https://comegrab.in/blogs/databricks-telecom-case-study.html">
+<meta name="theme-color" content="#0B2545">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="../" aria-label="ComeGrab home">ComeGrab</a>
+    <nav class="nav" aria-label="Main">
+      <a class="link" href="../consulting/">Consulting</a>
+      <a class="link" href="../legal/">Legal help</a>
+      <a class="link" href="../blogs/" aria-current="page">Blogs</a>
+      <a class="link" href="../shop/">Shop</a>
+      <a class="link" href="../games/">Games</a>
+      <a class="btn small" href="../index.html#contact">Contact us</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="dark" aria-label="Article title">
+    <div class="wrap page-head">
+      <p class="crumb"><a href="./">Blogs</a></p>
+      <h1>Connecting telecom network operations and customer data on Databricks</h1>
+      <p class="lede">A case study: one platform that finds network faults, proves root causes, measures service levels, and links poor network quality to customer complaints and churn.</p>
+    </div>
+  </section>
+
+  <section class="block" aria-label="At a glance">
+    <div class="wrap">
+      <div class="stats">
+        <div class="stat"><b>604</b><span>cells across 200 sites in four regions</span></div>
+        <div class="stat"><b>50,000</b><span>customers, including a 5G launch cohort</span></div>
+        <div class="stat"><b>4</b><span>dashboards, from the network operations centre to the boardroom</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="intro-h">
+    <div class="wrap">
+      <div class="prose">
+        <h2 id="intro-h">Overview</h2>
+        <p>A telecom operator runs on two kinds of data that rarely meet. The network side (OSS) records what the network is doing: inventory, performance counters, alarms, logs and trouble tickets. The customer side (BSS) records who the customers are and what they experience: orders, plans, recharges and complaints. Most of the value sits where the two meet, for example in knowing that a customer's complaint comes from a cell that has been dropping calls all week.</p>
+        <p>This case study follows a fictional mid-size operator, Nova Telecom, over one operating month (September 2026). It operates 200 sites and 604 cells in Pune, Mumbai, Delhi and Bangalore, and it launches a 5G offer in Pune. We built a single Databricks platform for it, from raw files to executive dashboards. This article walks through the challenges, the architecture, how each one was solved, and what a business gets from it.</p>
+        <p class="note">All data in this case study is synthetic. It was designed to behave like real operator feeds, with realistic problems built into it so that we could verify the platform finds them.</p>
+
+        <h2 id="contents">In this article</h2>
+        <ul class="plain">
+          <li><a href="#challenges">The Challenges</a></li>
+          <li><a href="#architecture">The Architecture</a></li>
+          <li><a href="#foundation">A Governed Foundation</a></li>
+          <li><a href="#inventory">Network Inventory and Configuration History</a></li>
+          <li><a href="#performance">Performance Management Across Two Vendors</a></li>
+          <li><a href="#ingestion">Continuous Ingestion of Operational Feeds</a></li>
+          <li><a href="#faults">Fault Management and Node Logs</a></li>
+          <li><a href="#tickets">Trouble Tickets, SLA and MTTR</a></li>
+          <li><a href="#activation">Customer Onboarding and Service Activation</a></li>
+          <li><a href="#link">Linking Customers to the Network</a></li>
+          <li><a href="#gold">Business-Ready Insight</a></li>
+          <li><a href="#automation">Automation: Pipelines and Workflows</a></li>
+          <li><a href="#d-noc">Dashboard: Network Operations Centre</a></li>
+          <li><a href="#d-opt">Dashboard: Optimization and Root Cause</a></li>
+          <li><a href="#d-cust">Dashboard: Customer and Provisioning</a></li>
+          <li><a href="#d-exec">Dashboard: Executive Summary</a></li>
+          <li><a href="#constraints">The Constraints</a></li>
+          <li><a href="#next">What Comes Next</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="challenges" class="block soft" aria-labelledby="challenges-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="challenges-h">The Challenges</h2>
+        <p>During the month, Nova Telecom faces six operational problems. None of them is exotic. Each is the kind of issue a real operator meets regularly, and each is hard to diagnose when network and customer data live in separate systems.</p>
+      </div>
+      <div class="cards three">
+        <div class="card">
+          <p class="meta">Network operations</p>
+          <h3>A fiber cut takes cells off air</h3>
+          <p>On 20 September a transport fiber cut takes 15 cells in Pune offline for six hours. Alarms, performance data and tickets all record it, in different systems, and the service-level clock keeps running.</p>
+        </div>
+        <div class="card">
+          <p class="meta">Network operations</p>
+          <h3>A software release degrades one vendor's cells</h3>
+          <p>After a software upgrade on 10 September, 107 cells from Vendor B raise far more alarms than everyone else. The cause is easy to miss in a single chart, and hard to prove without logs.</p>
+        </div>
+        <div class="card">
+          <p class="meta">Optimization</p>
+          <h3>A parameter change backfires</h3>
+          <p>On 15 September an engineer adjusts the antenna tilt on ten cells. Call drops rise on the same day, but nothing in the data connects the two unless configuration history is kept.</p>
+        </div>
+        <div class="card">
+          <p class="meta">Capacity</p>
+          <h3>Evening congestion in Mumbai</h3>
+          <p>Thirty cells exceed 85% radio utilization every evening. This is not a fault. It is a capacity problem, and it needs a planning decision, not a repair ticket.</p>
+        </div>
+        <div class="card">
+          <p class="meta">Customer onboarding</p>
+          <h3>Activations fail during the 5G launch</h3>
+          <p>On 3 September, hundreds of new customers' orders stall between the order system and the network. The order system says "in progress", the CRM says "pending", and customers are left without service.</p>
+        </div>
+        <div class="card">
+          <p class="meta">Customer experience</p>
+          <h3>Poor network quality drives churn</h3>
+          <p>Customers on weak cells complain more and leave more often. But complaints carry no cell identifier, so the connection stays invisible unless the two data worlds are joined.</p>
+        </div>
+      </div>
+      <div class="prose">
+        <p>Underneath these six sit four data problems that any operator will recognise:</p>
+        <ul>
+          <li><b>Two worlds, no join.</b> Network (OSS) and customer (BSS) data sit in different systems, with different keys.</li>
+          <li><b>Every vendor speaks its own format.</b> Two vendors export the same performance counters with different column names, time formats and file names.</li>
+          <li><b>The feeds never stop.</b> Files arrive every hour. A platform must load only what is new and never load anything twice.</li>
+          <li><b>Without history, no root cause.</b> If a configuration change overwrites the old value, nobody can later show what changed before a problem began.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="architecture" class="block" aria-labelledby="architecture-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="architecture-h">The Architecture</h2>
+        <p>Data moves through four stages on Databricks, governed throughout by Unity Catalog. Each stage can be rebuilt from the one before it, so every number can be traced back to the source file it came from.</p>
+      </div>
+      <ol class="steps">
+        <li>
+          <h3>Source feeds and landing zone</h3>
+          <p>Files from every source system arrive in one governed landing area, exactly as the source sent them.</p>
+        </li>
+        <li>
+          <h3>Bronze: raw and traceable</h3>
+          <p>An untouched copy in Delta tables, stamped with load time and source file. Auto Loader picks up only new files.</p>
+        </li>
+        <li>
+          <h3>Silver: trusted and harmonized</h3>
+          <p>Cleaned, typed and de-duplicated. Vendor formats become one schema. Configuration and customer history are preserved.</p>
+        </li>
+        <li>
+          <h3>Gold: business-ready</h3>
+          <p>Cell health, SLA and MTTR, root cause, capacity plan and churn risk, feeding the dashboards.</p>
+        </li>
+      </ol>
+      <div class="sec-head">
+        <h3>What flows through it</h3>
+      </div>
+      <div class="ip-grid">
+        <div>
+          <p><b>Network side (OSS)</b></p>
+          <ul class="plain">
+            <li><b>Inventory.</b> Sites, cells, equipment and software versions.</li>
+            <li><b>Performance counters.</b> Every cell, every 15 minutes, from two vendors.</li>
+            <li><b>Fault events.</b> Alarm raise and clear events.</li>
+            <li><b>Node logs.</b> Free-text logs from the equipment.</li>
+            <li><b>Trouble tickets.</b> From the service-management tool.</li>
+            <li><b>Provisioning logs.</b> Commands sent to the network when a customer is activated.</li>
+          </ul>
+        </div>
+        <div>
+          <p><b>Customer side (BSS)</b></p>
+          <ul class="plain">
+            <li><b>CRM.</b> Customers, plans and profile changes.</li>
+            <li><b>Orders.</b> From the order-management system.</li>
+            <li><b>Recharges.</b> From billing.</li>
+            <li><b>Complaints.</b> From customer care.</li>
+            <li><b>Call detail records (CDR).</b> The bridge. Each record carries a customer and the cell that served them.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <article class="block soft">
+    <div class="wrap">
+      <div class="prose">
+
+        <h2 id="foundation">A Governed Foundation</h2>
+        <p><b>Business context.</b> Before any data arrives, a platform needs a clear place for it, with separate zones for raw, cleaned and business-ready data. Without this, teams end up with copies of copies and no way to tell which one is right.</p>
+        <p><b>Solution.</b> We created a single Unity Catalog catalog for the operator, with three layers (bronze, silver, gold) and a managed landing area for incoming files. Compute is serverless, and engineers connect from their own editor using Databricks Connect, so code written locally runs on Databricks.</p>
+        <p><b>Approach.</b> Catalog, schemas and a volume are created with SQL. Nothing is installed on a server, and the environment is rebuilt from a dependency file.</p>
+        <p><b>Outcome.</b> An empty but fully governed structure, ready to receive every feed.</p>
+        <p class="pain"><b>Value add.</b> One place for all operational data, with clear stages from raw to business-ready. If a number looks wrong, it can be traced back to the exact source file.</p>
+
+        <h2 id="inventory">Network Inventory and Configuration History</h2>
+        <p><b>Business context.</b> After rollout, the inventory system holds what exists: sites, cells, and the radio equipment on them. Cell settings such as antenna tilt, and the software on the equipment, change over time. If a change overwrites the old value, the history of why a cell behaves differently is lost.</p>
+        <p><b>Solution.</b> We loaded 200 sites, 604 cells and 604 equipment records into bronze tables, then built clean silver tables. The cell table keeps a version for every change, with the dates it was effective, so any past configuration can be looked up. When the 15 September tilt change was applied to ten cells, the old version was closed and a new one was opened.</p>
+        <p><b>Approach.</b></p>
+        <ul>
+          <li>Raw inventory files are loaded unchanged, with the source file and load time recorded on every row.</li>
+          <li>Silver removes duplicates, converts dates, and checks that every cell belongs to a valid site.</li>
+          <li>Configuration history uses a slowly changing dimension (SCD Type 2) built with Delta Lake MERGE.</li>
+          <li>Delta time travel lets a table be read as it was earlier, or rolled back if a change is wrong.</li>
+        </ul>
+        <p><b>Outcome.</b> 200 sites, 604 current cells and 604 equipment records, with no orphan cells. After the tilt change, the cell table holds 614 versions (604 current). Software releases are tracked per cell, and Vendor B runs release 22.3 on 107 cells, which no Vendor A cell runs.</p>
+        <p class="pain"><b>Value add.</b> A full history of every configuration change, not just today's value. This is what makes it possible to show that a degradation began right after a specific change.</p>
+
+        <h2 id="performance">Performance Management Across Two Vendors</h2>
+        <p><b>Business context.</b> Each vendor's element manager exports raw performance counters every 15 minutes. The two vendors use different column names, different time formats and different file names, so the same cell counted by two vendors cannot be compared directly.</p>
+        <p><b>Solution.</b> We ingested 1,440 counter files (720 per vendor, one per hour) and harmonized them into one standard table. Standard KPIs are then calculated from the counters: RRC success rate, drop rate, radio (PRB) utilization, throughput and availability.</p>
+        <p><b>Approach.</b></p>
+        <ul>
+          <li>Each vendor has its own raw bronze table, so nothing is lost or altered on the way in.</li>
+          <li>Silver renames both formats to one schema, casts text to numbers, and parses both time formats into a single timestamp.</li>
+          <li>KPIs are calculated from counters, for example drop rate = abnormal releases divided by successful establishments.</li>
+          <li>The results are reconciled against an independent reference KPI set to prove the chain is correct.</li>
+        </ul>
+        <p><b>Outcome.</b> 1,739,520 readings (604 cells, every 15 minutes, for 30 days), with no missing timestamps and no duplicates. Calculated KPIs matched the reference within rounding: the average difference was 0.007 percentage points for RRC success and drop rate. From the raw counters alone, the platform rediscovered three of the challenges:</p>
+        <ul>
+          <li>The fiber cut appears as 360 cell-intervals with zero availability, on 15 cells for six hours.</li>
+          <li>The congested Mumbai cells run at about 91% evening utilization, against about 69% elsewhere.</li>
+          <li>The ten cells with the tilt change see drop rate rise from about 0.5 to about 2.5 after 15 September.</li>
+        </ul>
+        <p class="pain"><b>Value add.</b> Two vendors, two formats, one standard KPI view. Engineers compare cells across vendors with confidence, and the numbers are proven against a reference.</p>
+
+        <h2 id="ingestion">Continuous Ingestion of Operational Feeds</h2>
+        <p><b>Business context.</b> Operational feeds never stop. A platform that reloads everything each time is slow and risky, and one that misses a file produces silent gaps.</p>
+        <p><b>Solution.</b> We used Databricks Auto Loader, which tracks which files it has already processed and loads only new ones. Performance, fault and log feeds all load this way, as do tickets, customer, order, provisioning, CDR, recharge and complaint feeds.</p>
+        <p><b>Approach.</b> Each feed has its own checkpoint. A run processes everything that is waiting and then stops, so it can be scheduled or triggered on demand.</p>
+        <p><b>Outcome.</b> 1,048,320 and 691,200 performance rows from the two vendors (together exactly the 1,739,520 readings), 6,822 fault events and 5,718 log lines. A second run loaded nothing new, which shows that no file is processed twice.</p>
+        <p class="pain"><b>Value add.</b> New files are picked up automatically and never duplicated. If an element manager sends a file every 15 minutes, the platform simply keeps up.</p>
+
+        <h2 id="faults">Fault Management and Node Logs</h2>
+        <p><b>Business context.</b> Alarms do not arrive as finished records. The fault-management system sends a "raise" event when something fails and a separate "clear" event when it recovers. Equipment also writes free-text logs. Alarms and logs come from different systems, so each one alone is only partial evidence.</p>
+        <p><b>Solution.</b> We paired raise and clear events into complete alarms with durations, flagged alarms that were still open, and parsed the free-text logs into structured rows that can be filtered and joined.</p>
+        <p><b>Approach.</b></p>
+        <ul>
+          <li>A left join keeps raise events that have no clear yet, so open alarms are never dropped.</li>
+          <li>Regular expressions extract time, site, cell, severity and message from each log line, and classify the event (restart, crash, recovery, routine).</li>
+          <li>Alarms and log errors are correlated on the same cell and second.</li>
+          <li>Both results are checked against reference data.</li>
+        </ul>
+        <p><b>Outcome.</b> 6,822 events became 3,413 alarms, with 4 still open at month end and no orphan clear events. All 5,718 log lines were parsed. Two findings stood out:</p>
+        <ul>
+          <li><b>Fiber cut.</b> 15 critical Link Down alarms of exactly 360 minutes each, matching the zero availability in the performance data. Two independent feeds agree.</li>
+          <li><b>Vendor B release 22.3.</b> Alarms per cell per day rose from 0.09 to 0.82 (about nine times) after 10 September, while every other group stayed near 0.1. All 1,079 error log lines sit on those 107 cells, none before the upgrade.</li>
+        </ul>
+        <p class="pain"><b>Value add.</b> Root cause with evidence. When alarms and logs independently point at the same release, the conclusion is no longer a hunch, and the vendor conversation can start with data.</p>
+
+        <h2 id="tickets">Trouble Tickets, SLA and MTTR</h2>
+        <p><b>Business context.</b> In a managed-services contract, service levels are measured on tickets, not alarms. Critical and major alarms open tickets with a target: four hours for priority 1 and eight hours for priority 2. Penalties follow breaches.</p>
+        <p><b>Solution.</b> We loaded 1,781 tickets from daily service-management exports and calculated resolution time, SLA breach and mean time to resolve (MTTR) for each ticket, priority and team. Tickets still open are aged to a fixed reporting date.</p>
+        <p><b>Approach.</b> A single configuration table holds the reporting period and the "as of" time (30 September, 23:59:59). Reports and dashboards read their dates from it and never from the system clock, so the review is reproducible on any day.</p>
+        <p><b>Outcome.</b></p>
+        <ul>
+          <li>Priority 1: 15 tickets, MTTR 6.3 hours, 15 breaches, 0% compliance. This is the fiber cut.</li>
+          <li>Priority 2: 1,766 tickets, MTTR 1.39 hours, 27 breaches, 98.5% compliance.</li>
+          <li>By team: Transport had 15 tickets and 15 breaches, Field 687 tickets and 27 breaches, and Software/NOC 1,079 tickets and no breaches. The bad software release generates the most tickets, but they close quickly.</li>
+          <li>3 tickets were still open at the reporting date.</li>
+        </ul>
+        <p class="pain"><b>Value add.</b> The cost of an incident is expressed in the terms of the contract: breaches, compliance and mean time to resolve, by team.</p>
+
+        <h2 id="activation">Customer Onboarding and Service Activation</h2>
+        <p><b>Business context.</b> Activating a customer touches both worlds. The order system accepts the order, then the network's provisioning systems have to create the subscriber profile (HSS), the policy (PCRF) and the charging account (OCS). If any step fails, the customer has no service, even though the order looks fine in the CRM.</p>
+        <p><b>Solution.</b> We loaded the CRM and order data (50,000 customers, 6 plans, 12,000 launch orders and 2,676 customer profile changes) together with 36,739 provisioning log lines, and built a single view of each order from submission to activation.</p>
+        <p><b>Approach.</b></p>
+        <ul>
+          <li>Customer history uses the same slowly changing dimension approach as the cell inventory, so changes such as identity-check status or email are versioned.</li>
+          <li>The customer history is built set-wise using window functions rather than row by row, which turns a job that can take over an hour into a few minutes.</li>
+          <li>The provisioning log is summarised to one row per order: attempts, failures, which system failed, and the outcome.</li>
+        </ul>
+        <p><b>Outcome.</b> On 3 September, between 10:00 and 17:59, 333 of the day's 1,062 orders (31.4%) never completed. Every one failed at the HSS, with four failed attempts and no call to the policy or charging systems. Before 10:00 and after 18:00 no orders were stuck, and normal activation takes about 17 minutes. The platform confirms that the order system's "in progress" and the CRM's "pending" refer to the same 333 customers.</p>
+        <p class="pain"><b>Value add.</b> The exact window and the exact network element behind an activation failure, instead of a week of back-and-forth between teams.</p>
+
+        <h2 id="link">Linking Customers to the Network</h2>
+        <p><b>Business context.</b> Customer care records a complaint against a customer, not against a cell. To know whether network quality drives complaints and churn, the customer has to be tied to the cells that serve them.</p>
+        <p><b>Solution.</b> The call detail record (CDR) carries both the subscriber and the serving cell, so it bridges the two worlds. We loaded 1,518,380 CDRs for a sample of 10,000 customers, with 44,927 recharges and 6,497 complaints, and assigned each customer to the cell they use most.</p>
+        <p><b>Approach.</b> Attributing a customer to every cell they ever touched blurs the signal, because a customer's complaints end up spread across many cells. Using the most-used cell as the primary serving cell, the way operators infer a customer's home cell, restores it.</p>
+        <p><b>Outcome.</b> The 30 cells with the highest voice drop rate were all in the affected set. Comparing customers on poor cells with the rest:</p>
+        <ul>
+          <li>Voice drop rate: 3.1% against 0.98%.</li>
+          <li>Complaints per 1,000 customers: 331 against 49 (about seven times).</li>
+          <li>Churn: 12.5% against 1.0% (about twelve times).</li>
+        </ul>
+        <p>The complaint categories trace back to the challenges: 660 "No network" complaints from the fiber cut, and 228 "Activation failure" complaints from the stuck orders. These results are discovered by the platform from CDRs, complaints and subscriptions. They are not read from any reference table.</p>
+        <p class="pain"><b>Value add.</b> A clear link between network investment and revenue protection: customers on poor cells complain about seven times more and churn about twelve times more.</p>
+
+        <h2 id="gold">Business-Ready Insight</h2>
+        <p><b>Business context.</b> Silver holds trustworthy records, but a network lead or a retention manager needs answers, not tables.</p>
+        <p><b>Solution.</b> Gold tables built on the reporting period turn silver into decisions.</p>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Gold table</th><th>What it answers</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>Cell health</td><td>How healthy is each cell, and why? A 0 to 100 score from drop rate, accessibility, evening load, availability and alarms.</td><td>604 cells scored: 140 Critical and 464 Healthy. Every Critical cell was one with a known problem, and no normal cell scored below 100.</td></tr>
+            <tr><td>Worst cells</td><td>Where should engineers look first?</td><td>Top 50 with a stated main issue: repeated alarms or evening congestion.</td></tr>
+            <tr><td>SLA and MTTR, daily</td><td>Are we meeting the contract?</td><td>1,778 tickets in the period and 42 breaches.</td></tr>
+            <tr><td>Root cause by vendor and release</td><td>Is one release responsible?</td><td>Vendor B release 22.3: 0.09 to 0.82 alarms per cell per day. Others flat.</td></tr>
+            <tr><td>Capacity plan</td><td>Which cells need investment, and what action?</td><td>30 Mumbai cells flagged, with no false positives. 29 recommended for new-site or densification planning, and one for a 5G carrier upgrade.</td></tr>
+            <tr><td>Provisioning, daily</td><td>Are new customers being activated?</td><td>Stuck orders appear only on 3 September.</td></tr>
+            <tr><td>Churn risk</td><td>Which customers are likely to leave?</td><td>Actual churn is 32.5% in the High band, 9.4% in Medium and 1.5% in Low. Contacting High and Medium (22% of customers) reaches 72% of those who churn.</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <p><b>Approach.</b> Every gold table reads its dates from the reporting configuration. The health score is deliberately transparent: each cell shows the penalty behind its score, so engineers can see why a cell is rated Critical.</p>
+        <p class="pain"><b>Value add.</b> Each cell has a health score with a stated reason. The capacity plan turns congestion into a recommendation: where to add capacity, or plan a new site. This is how operations data feeds back into network planning.</p>
+
+        <h2 id="automation">Automation: Pipelines and Workflows</h2>
+        <p><b>Business context.</b> A platform that depends on people running scripts in the right order is fragile. Quality rules that live in someone's head do not protect a report.</p>
+        <p><b>Solution.</b> We expressed the performance chain as a Lakeflow Declarative Pipeline: two streaming tables for the vendor feeds, a silver table that harmonizes them and calculates KPIs, and a daily gold summary. Databricks works out the order, runs it and tracks data quality. A Databricks Workflow then runs the pipeline and a verification task that compares its output with the reference.</p>
+        <p><b>Approach.</b> Four data quality rules are declared on the silver table: valid timestamp, successes not above attempts, radio blocks used not above available, and uptime within 0 to 900 seconds. A record that breaks a rule is counted and dropped, and not passed silently into a report. The verification task fails the workflow if the two row counts differ.</p>
+        <p><b>Outcome.</b> The pipeline ran green end to end and all four quality rules were met. It produced 1,739,520 rows in the silver table, exactly matching the reference, and the workflow completed in about 35 seconds on serverless compute.</p>
+        <p class="pain"><b>Value add.</b> Production-style operation: declared tables, built-in quality rules, a correctness gate, and a run history. The same pattern extends to the other feeds.</p>
+
+        <h2 id="d-noc">Dashboard: Network Operations Centre</h2>
+        <p><b>Purpose.</b> The view for the team that runs the network each day: what is wrong now, which tickets are at risk, and which cells need attention. It is built from five datasets and read from the gold tables.</p>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Widget</th><th>What it shows</th><th>What it tells you</th></tr></thead>
+          <tbody>
+            <tr><td>Headline counters</td><td>Total alarms 3.41K, open alarms 4, tickets 1.78K, SLA breaches 42, critical cells 140.</td><td>The state of the month at a glance. Fifteen of the 42 breaches are a single event.</td></tr>
+            <tr><td>Alarms per day by severity</td><td>Daily alarms stacked by severity. They are steady until 10 September, then step up. A small critical block appears on 20 September.</td><td>Two separate problems are visible: the software release effect and the fiber cut.</td></tr>
+            <tr><td>SLA breaches per day</td><td>Breaches by day and priority. One tall priority-1 bar (15) on 20 September.</td><td>The outage lasted six hours against a four-hour target, so every priority-1 ticket breached.</td></tr>
+            <tr><td>Availability on the day of the fiber cut</td><td>Hourly availability for the 15 affected cells against all other cells.</td><td>Availability drops to zero from about 10:00 and recovers about 16:00, while the rest of the network stays at 100%. The line looks sloped because points are hourly averages.</td></tr>
+            <tr><td>Worst 50 cells</td><td>Ranked by health score with region, vendor, software release, main issue, drop rate, evening load and alarms.</td><td>Engineers know what to fix, not only where. The top of the list is repeated alarms on one vendor's release.</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h2 id="d-opt">Dashboard: Optimization and Root Cause</h2>
+        <p><b>Purpose.</b> The NOC shows symptoms. This view helps engineers and planners find causes, and decide what to change or build.</p>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Widget</th><th>What it shows</th><th>What it tells you</th></tr></thead>
+          <tbody>
+            <tr><td>Cells on the suspect release</td><td>A counter: 107 cells.</td><td>The size of the population under suspicion.</td></tr>
+            <tr><td>Alarms per day by group</td><td>Daily alarms for release 22.3 cells against all other cells.</td><td>Same network, same weeks. Only the software differs, and the release 22.3 line jumps from about 10 September.</td></tr>
+            <tr><td>Alarms per cell per day, before and after</td><td>Grouped bars by vendor and software release.</td><td>Release 22.3 goes from about 0.09 to about 0.82 (about nine times). The other three groups stay near 0.1.</td></tr>
+            <tr><td>Drop rate after the tilt change</td><td>Average drop rate per day for the ten changed cells against all others.</td><td>The changed cells rise from about 0.5 to about 2.5 after 15 September, while the rest stay flat. The configuration history ties the rise to the change.</td></tr>
+            <tr><td>Congestion by hour of day</td><td>Average radio utilization by hour for the 30 congested cells against all others.</td><td>The congested cells peak near 91% between 18:00 and 21:59, against about 69% for the rest. This is a capacity issue, not a fault.</td></tr>
+            <tr><td>Capacity plan</td><td>The 30 flagged Mumbai cells with technology, band, evening load, share of evening intervals above 85%, priority and recommended action.</td><td>The next investment decision, derived from operations data.</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h2 id="d-cust">Dashboard: Customer and Provisioning</h2>
+        <p><b>Purpose.</b> The view that joins the customer world to the network world, for activation teams, customer care and retention managers.</p>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Widget</th><th>What it shows</th><th>What it tells you</th></tr></thead>
+          <tbody>
+            <tr><td>Stuck orders by day</td><td>Stuck orders per day. A single bar on 3 September (333).</td><td>The activation failure was confined to one day of the launch week.</td></tr>
+            <tr><td>Orders and stuck orders by hour, 3 September</td><td>Orders and stuck orders per hour of that day.</td><td>Nothing is stuck before 10:00 or after 17:59. A clean window points to a specific system fault, not a gradual decline.</td></tr>
+            <tr><td>Churn by risk band</td><td>Actual churn in the High, Medium and Low risk bands.</td><td>Churn rises from 1.5% to 9.4% to 32.5%. The score separates customers who leave from those who stay.</td></tr>
+            <tr><td>Complaints by category</td><td>Complaints per category.</td><td>Call drops and slow data lead. 660 "No network" and 228 "Activation failure" trace back to the fiber cut and the stuck orders.</td></tr>
+            <tr><td>Cell quality and churn</td><td>Cells with known problems against all other cells: drop rate, complaints per 1,000 customers and churn.</td><td>Poor network quality shows up in complaints (331 against 49) and churn (12.5% against 1.0%).</td></tr>
+            <tr><td>Highest-risk customers</td><td>The 25 highest-scoring customers with their primary cell, its drop rate and number of complaints.</td><td>A ready outreach list for the retention team. Several top customers share the same cells that had the tilt change.</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <h2 id="d-exec">Dashboard: Executive Summary</h2>
+        <p><b>Purpose.</b> One page for leadership: the scale of the network, the size of the problems, and the findings in plain language.</p>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Widget</th><th>What it shows</th><th>What it tells you</th></tr></thead>
+          <tbody>
+            <tr><td>Seven headline counters</td><td>200 sites, 604 cells, 49,667 active or churned subscriptions, 42 SLA breaches, 140 critical cells, 333 stuck orders, 30 cells needing capacity.</td><td>The scale of the network and the size of the problems, in one row.</td></tr>
+            <tr><td>Findings</td><td>Six one-line findings, each with its evidence: the fiber cut, the vendor software release, the tilt change, evening congestion, the activation failure, and the churn link.</td><td>The month's story in six sentences. Each row corresponds to a view on the other dashboards.</td></tr>
+            <tr><td>Churn by risk band</td><td>Actual churn by band.</td><td>The retention case in one chart.</td></tr>
+            <tr><td>SLA breaches by day</td><td>Breaches per day.</td><td>One event accounts for most of the month's SLA damage.</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+      </div>
+    </div>
+  </article>
+
+  <section id="constraints" class="block" aria-labelledby="constraints-h">
+    <div class="wrap">
+      <div class="prose">
+        <h2 id="constraints-h">The Constraints</h2>
+        <ul>
+          <li><b>Synthetic data.</b> The dataset is generated to behave like real operator feeds. Vendor names and software releases are fictional. The results demonstrate the approach and are not a measure of any real operator.</li>
+          <li><b>A fixed reporting period.</b> The dashboards are a retrospective review of September 2026, with all dates anchored to a configured reporting date. They are not live views.</li>
+          <li><b>Customer analytics on a sample.</b> CDR-based analysis covers a sample of 10,000 customers. A production deployment would use every customer's CDRs.</li>
+          <li><b>A rule-based churn score.</b> The churn score is built from business rules and was evaluated on the data it was designed around. A trained and independently tested model is a next step.</li>
+          <li><b>Declarative pipeline scope.</b> The Lakeflow pipeline covers the performance chain. The remaining feeds were run as scripts using the same patterns, and would move into pipelines for production.</li>
+          <li><b>Workspace limits.</b> The project ran on Databricks Free Edition, which uses serverless compute and limits some features, including job scheduling. A production workspace needs sizing for real volumes.</li>
+          <li><b>Hand-written summary text.</b> The findings text on the executive dashboard is written from the verified results and is updated by hand, while the counters beside it are live queries.</li>
+          <li><b>Governance still to come.</b> Fine-grained access control and masking of personal data (names, emails, phone numbers) are planned and not yet applied.</li>
+        </ul>
+
+        <h2 id="next">What Comes Next</h2>
+        <ul>
+          <li><b>Machine learning with MLflow.</b> Anomaly detection on cell KPIs, and a churn model trained and tested on separate data, compared with the rule-based score.</li>
+          <li><b>Governance.</b> Unity Catalog permissions, lineage across the whole chain, and masking of personal data for users without access.</li>
+          <li><b>Final verification.</b> A last check of every figure against its source, before the platform is presented as complete.</li>
+        </ul>
+        <p>If you operate a network, or support one, and want to see what this looks like on your own data, we would be glad to talk it through.</p>
+        <a class="back" href="./">Back to all articles</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" class="block soft" aria-labelledby="contact-h">
+    <div class="wrap contact">
+      <div>
+        <h2 id="contact-h">Want to talk it through?</h2>
+        <p>We are happy to discuss any of this for your own business.</p>
+        <div class="cta-row">
+          <a class="btn" href="mailto:epraagn@gmail.com?subject=Enquiry%20from%20comegrab.in">Email us</a>
+          <a class="btn outline" href="https://wa.me/919599746308" rel="noopener">WhatsApp</a>
+        </div>
+      </div>
+      <ul class="details">
+        <li><span>Email</span><a href="mailto:epraagn@gmail.com">epraagn@gmail.com</a></li>
+        <li><span>WhatsApp</span><a href="https://wa.me/919599746308" rel="noopener">+91 95997 46308</a></li>
+        <li><span>LinkedIn</span><a href="https://www.linkedin.com/in/manvita-singh-6ba020105/" rel="noopener">Manvita Singh - Founder</a></li>
+      </ul>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="wrap">
+    <div class="row">
+      <span>&copy; 2026 ComeGrab</span>
+      <nav aria-label="Our sites">
+        <a href="../">Home</a>
+        <a href="../consulting/">Consulting</a>
+        <a href="../legal/">Legal help</a>
+        <a href="../blogs/">Blogs</a>
+        <a href="../shop/">Shop</a>
+        <a href="../games/">Games</a>
+      </nav>
+    </div>
+    <p class="note">Information on these sites is general and is not legal or professional advice for your situation. Views expressed are our own.</p>
+  </div>
+</footer>
+</body>
+</html>
